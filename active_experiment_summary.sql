@@ -1,22 +1,29 @@
 -- update the derived table for the active experiment summary explore to include user bucketed experiments 
 WITH all_experiments as (
-  select
-    launch_id
-    , date(timestamp_seconds(boundary_start_sec)) as start_date
-    , date(timestamp_seconds(boundary_end_sec)) as end_date
-    , max(date(timestamp_seconds(boundary_end_sec))) as last_run_date
-  from etsy-data-warehouse-prod.catapult.results_metric_day
-group by all
-having max(date(timestamp_seconds(boundary_end_sec))) >= current_date-1 -- active experiments  only
+  SELECT 
+  DISTINCT l.launch_id, 
+  date(boundary_start_ts) AS start_date, 
+  _date AS last_run_date
+FROM 
+  `etsy-data-warehouse-prod.catapult_unified.experiment` AS e
+INNER JOIN 
+  `etsy-data-warehouse-prod.etsy_atlas.catapult_experiment_boundaries` AS b 
+    ON UNIX_SECONDS(e.boundary_start_ts) = b.start_epoch 
+    AND e.experiment_id = b.config_flag
+INNER JOIN 
+  `etsy-data-warehouse-prod.etsy_atlas.catapult_launches` AS l ON l.launch_id = b.launch_id
+WHERE _date = CURRENT_DATE()-1
+  AND l.state = 1 # Currently running
+  AND delete_date IS NULL # Remove deleted experiments
 )
 , all_variants AS (
   SELECT
       ae.launch_id,
       ae.start_date,
+      ae.last_run_date,
       case when exp_on_key_metrics.experiment_id is null then "User Bucketed" else "Browser Bucketed" end as bucketing_type, 
       exp_on_key_metrics.experiment_id,
       exp_on_key_metrics.variant_name,
-      ae.last_run_date,
       -- DATE(timestamp_seconds(exp_on_key_metrics.bound_start_date)) AS start_date,
       -- DATE(timestamp_seconds(exp_on_key_metrics.run_date)) AS last_run_date,
       exp_on_key_metrics.conv_rate_pct_change,
@@ -194,7 +201,7 @@ having max(date(timestamp_seconds(boundary_end_sec))) >= current_date-1 -- activ
         FROM  `etsy-data-warehouse-prod.etsy_atlas.catapult_launches_enabling_team`
         GROUP BY launch_id)
 SELECT
-    a_0.experiment_id,
+    -- a_0.experiment_id,
     a_0.launch_id,
     a_0.bucketing_type,
     a_0.team,
