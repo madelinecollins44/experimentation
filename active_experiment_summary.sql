@@ -13,6 +13,7 @@ having max(date(timestamp_seconds(boundary_end_sec))) >= current_date-1 -- activ
   SELECT
       ae.launch_id,
       ae.start_date,
+      case when exp_on_key_metrics.experiment_id is null then "User Bucketed" else "Browser Bucketed" end as bucketing_type, 
       exp_on_key_metrics.experiment_id,
       exp_on_key_metrics.variant_name,
       ae.last_run_date,
@@ -58,13 +59,10 @@ having max(date(timestamp_seconds(boundary_end_sec))) >= current_date-1 -- activ
         FROM
           `etsy-data-warehouse-prod`.etsy_atlas.catapult_launches
         WHERE launch_percentage IN (0, 100)
-        -- and launch_id = 1303427511728
     )
   ORDER BY 1,2
     --  exclude ramped experiments
 )
--- select * from `etsy-data-warehouse-prod`.etsy_atlas.catapult_launches where launch_id = 1303427511728
-
 , off_gms AS (
   SELECT
       exp_off_key_metrics.experiment_id,
@@ -88,6 +86,7 @@ having max(date(timestamp_seconds(boundary_end_sec))) >= current_date-1 -- activ
       s.team,
       s.name,
       s.initiative,
+      a.bucketing_type,
       --s.enabling_teams,
       s.launch_group as group_name,
       s.outcome,
@@ -195,8 +194,9 @@ having max(date(timestamp_seconds(boundary_end_sec))) >= current_date-1 -- activ
         FROM  `etsy-data-warehouse-prod.etsy_atlas.catapult_launches_enabling_team`
         GROUP BY launch_id)
 SELECT
-    -- a_0.experiment_id,
+    a_0.experiment_id,
     a_0.launch_id,
+    a_0.bucketing_type,
     a_0.team,
     a_0.name,
     a_0.initiative,
@@ -237,6 +237,6 @@ SELECT
     exp_summary AS a_0
     INNER JOIN daily_denoms AS d ON d.date BETWEEN a_0.start_date AND a_0.last_run_date
     left join enabling_teams e on e.launch_id = a_0.experiment_id
-  GROUP BY all
+   GROUP BY all
 ORDER BY
   days_running
