@@ -109,71 +109,141 @@ select *,
         WHEN conv_rate_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
         ELSE 0
       END AS significant_cr_change,
+            CASE
+        WHEN conv_rate_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+              and conv_rate_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_cr_change,
 --acbv metrics
       CASE
         WHEN winsorized_acbv_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
         ELSE 0
       END AS significant_winsorized_acbv_change,
+    CASE
+        WHEN winsorized_acbv_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+              and winsorized_acbv_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_winsorized_acbv_change,
 --prolist metrics
       CASE
         WHEN on_prolist_pct_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
         ELSE 0
       END AS significant_prolist_change,
+     CASE
+        WHEN on_prolist_pct_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+              and on_prolist_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_prolist_change,
 --add to cart metrics
       CASE
         WHEN on_atc_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
         ELSE 0
       END AS significant_atc_change,
+      CASE
+        WHEN on_atc_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_atc_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_atc_change,
 --checkout start metrics
       CASE
         WHEN on_checkout_start_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
         ELSE 0
       END AS significant_checkout_start_change,
+       CASE
+        WHEN on_checkout_start_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_checkout_start_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_checkout_start_change,
 --error page vw metrics
       CASE
         WHEN on_error_pg_vw_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
         ELSE 0
       END AS significant_error_pg_vw_change,
+     CASE
+        WHEN on_error_pg_vw_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_error_pg_vw_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_error_pg_vw_change,
 --visit frequency metrics
       CASE
         WHEN on_visit_freq_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
         ELSE 0
       END AS significant_visit_freq_change,
+          CASE
+        WHEN on_visit_freq_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_visit_freq_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_visit_freq_change,
 -- osa revenue metrics
       CASE
         WHEN on_osa_revenue_attribution_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
         ELSE 0
       END AS significant_osa_revenue_attribution_change,
+       CASE
+        WHEN on_osa_revenue_attribution_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_osa_revenue_attribution_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_osa_revenue_attribution_change,
 --ocb page metrics
       CASE
         WHEN on_ocb_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
         ELSE 0
       END AS significant_ocb_change,
+       CASE
+        WHEN on_ocb_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_ocb_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_ocb_change,
 --aov metrics
       CASE
         WHEN on_winsorized_aov_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
         ELSE 0
       END AS significant_winsorized_aov_change,
+      CASE
+        WHEN on_winsorized_aov_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_winsorized_aov_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_winsorized_aov_change,
 --engaged metrics
       CASE
         WHEN on_engaged_visits_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
         ELSE 0
       END AS significant_engaged_visits_change,
+    CASE
+        WHEN on_engaged_visits_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_engaged_visits_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_engaged_visits_change,
 -- bounce metrics
       CASE
         WHEN on_bounces_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
         ELSE 0
       END AS significant_bounces_change,
+     CASE
+        WHEN on_bounces_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_bounces_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_bounces_change,
 --total orders per browser orders metrics
       CASE
         WHEN on_total_orders_per_browser_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
         ELSE 0
       END AS significant_total_orders_per_browser_change,
+    CASE
+        WHEN on_total_orders_per_browser_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_total_orders_per_browser_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_total_orders_per_browser_change,
 --purchase frequency metrics
       CASE
         WHEN on_purchase_freq_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
         ELSE 0
-      END AS significant_purchase_freq_change
+      END AS significant_purchase_freq_change,
+     CASE
+        WHEN on_purchase_freq_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) 
+        and on_purchase_freq_pct_change > 0 THEN 1
+        ELSE 0
+      END AS positive_significant_purchase_freq_change,
 from all_variants_minus_stat_sig
 group by all)
 , off_gms AS (
@@ -201,6 +271,7 @@ group by all)
       s.name,
       s.initiative,
       a.bucketing_type,
+      a.treatments_per_experiment,
       --s.enabling_teams,
       s.launch_group as group_name,
       s.outcome,
@@ -231,6 +302,21 @@ group by all)
       max(a.significant_bounces_change) AS significant_bounces_change,
       max(a.significant_total_orders_per_browser_change) AS significant_total_orders_per_browser_change,
       max(a.significant_purchase_freq_change) AS significant_purchase_freq_change,
+      -- positive changes
+      max(a.positive_significant_cr_change) AS positive_significant_cr_change,
+      max(a.positive_significant_winsorized_acbv_change) AS positive_significant_winsorized_acbv_change,
+      max(a.positive_significant_prolist_change) AS positive_significant_prolist_change,
+      max(a.positive_significant_atc_change) AS positive_significant_atc_change,
+      max(a.positive_significant_checkout_start_change) AS positive_significant_checkout_start_change,
+      max(a.positive_significant_error_pg_vw_change) AS positive_significant_error_pg_vw_change,
+      max(a.positive_significant_visit_freq_change) AS positive_significant_visit_freq_change,
+      max(a.positive_significant_osa_revenue_attribution_change) AS positive_significant_osa_revenue_attribution_change,
+      max(a.positive_significant_ocb_change) AS positive_significant_ocb_change,
+      max(a.positive_significant_winsorized_aov_change) AS positive_significant_winsorized_aov_change,
+      max(a.positive_significant_engaged_visits_change) AS positive_significant_engaged_visits_change,
+      max(a.positive_significant_bounces_change) AS positive_significant_bounces_change,
+      max(a.positive_significant_total_orders_per_browser_change) AS positive_significant_total_orders_per_browser_change,
+      max(a.positive_significant_purchase_freq_change) AS positive_significant_purchase_freq_change,
      --cr
       max(CASE
         WHEN a.treatment_rank = 1 THEN a.conv_rate_pct_change
@@ -241,9 +327,15 @@ group by all)
       max(CASE
         WHEN a.treatment_rank = 2 THEN a.conv_rate_pct_change
       END) AS cr_change_2,
+            max(CASE
+        WHEN a.treatment_rank = 2 THEN a.conv_rate_p_value
+      END) AS cr_p_value_2,
       max(CASE
         WHEN a.treatment_rank = 3 THEN a.conv_rate_pct_change
       END) AS cr_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.conv_rate_p_value
+      END) AS cr_p_value_3,
       --acvv
       max(CASE
         WHEN a.treatment_rank = 1 THEN a.winsorized_acbv_pct_change
@@ -537,6 +629,7 @@ SELECT
     a_0.experiment_id,
     a_0.launch_id,
     a_0.bucketing_type,
+    a_0.treatments_per_experiment,
     a_0.team,
     a_0.name,
     a_0.initiative,
@@ -569,9 +662,25 @@ SELECT
    significant_bounces_change,
    significant_total_orders_per_browser_change,
    significant_purchase_freq_change,
+     positive_significant_cr_change,
+  positive_significant_winsorized_acbv_change,
+  positive_significant_prolist_change,
+positive_significant_atc_change,
+   positive_significant_checkout_start_change,
+   positive_significant_error_pg_vw_change,
+   positive_significant_visit_freq_change,
+   positive_significant_osa_revenue_attribution_change,
+   positive_significant_ocb_change,
+   positive_significant_winsorized_aov_change,
+   positive_significant_engaged_visits_change,
+   positive_significant_bounces_change,
+   positive_significant_total_orders_per_browser_change,
+   positive_significant_purchase_freq_change,
    cr_change_1,
    cr_p_value_1,
+      cr_p_value_2,
    cr_change_2,
+      cr_p_value_3,
     cr_change_3,
     winsorized_acbv_change_1,
     winsorized_acbv_p_value_1,
@@ -656,6 +765,7 @@ SELECT
     exp_summary AS a_0
     INNER JOIN daily_denoms AS d ON d.date BETWEEN a_0.start_date AND a_0.last_run_date
     left join enabling_teams e on e.launch_id = a_0.experiment_id
+where (experiment_id = 1305831155216 or experiment_id = 1304533669483)
    GROUP BY all
 ORDER BY
   days_running
