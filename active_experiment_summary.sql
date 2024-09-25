@@ -659,3 +659,192 @@ SELECT
    GROUP BY all
 ORDER BY
   days_running
+
+
+
+
+
+
+
+
+
+----------------------test
+-- stat sig calcs
+WITH all_experiments as (
+  SELECT
+  DISTINCT l.launch_id,
+  date(boundary_start_ts) AS start_date,
+  _date AS last_run_date
+FROM
+  `etsy-data-warehouse-prod.catapult_unified.experiment` AS e
+INNER JOIN
+  `etsy-data-warehouse-prod.etsy_atlas.catapult_experiment_boundaries` AS b
+    ON UNIX_SECONDS(e.boundary_start_ts) = b.start_epoch
+    AND e.experiment_id = b.config_flag
+INNER JOIN
+  `etsy-data-warehouse-prod.etsy_atlas.catapult_launches` AS l ON l.launch_id = b.launch_id
+WHERE _date = CURRENT_DATE()-1
+  AND l.state = 1 -- Currently running
+  AND delete_date IS NULL -- Remove deleted experiments
+)
+, all_variants_minus_stat_sig AS (
+  SELECT
+      ae.launch_id,
+      ae.start_date,
+      ae.last_run_date,
+      case when exp_on_key_metrics.experiment_id is null then "User Bucketed" else "Browser Bucketed" end as bucketing_type,
+      exp_on_key_metrics.experiment_id,
+      exp_on_key_metrics.variant_name,
+      -- DATE(timestamp_seconds(exp_on_key_metrics.bound_start_date)) AS start_date,
+      -- DATE(timestamp_seconds(exp_on_key_metrics.run_date)) AS last_run_date,
+    exp_on_key_metrics.on_browsers,
+ --conversion rate metrics
+      exp_on_key_metrics.conv_rate_pct_change,
+      exp_on_key_metrics.conv_rate_p_value,
+      exp_on_key_metrics.conv_rate_is_powered,
+--acbv metrics
+      exp_on_key_metrics.winsorized_acbv_pct_change,
+      exp_on_key_metrics.winsorized_acbv_p_value,
+      exp_on_key_metrics.on_gms,
+--prolist metrics
+      exp_on_key_metrics.on_prolist_pct_change,
+      exp_on_key_metrics.on_prolist_pct_p_value,
+      exp_on_key_metrics.on_prolist_spend * exp_on_key_metrics.on_browsers / 100 AS on_prolist_spend,
+--add to cart metrics
+      exp_on_key_metrics.on_atc_pct_change,
+      exp_on_key_metrics.on_atc_p_value,
+--checkout start metrics
+      exp_on_key_metrics.on_checkout_start_pct_change,
+      exp_on_key_metrics.on_checkout_start_p_value,
+--error page vw metrics
+      exp_on_key_metrics.on_error_pg_vw_pct_change,
+      exp_on_key_metrics.on_error_pg_vw_p_value,
+--visit frequency metrics
+      exp_on_key_metrics.on_visit_freq_pct_change,
+      exp_on_key_metrics.on_visit_freq_p_value,
+      exp_on_key_metrics.on_visit_freq_pct_change_cuped,
+-- osa revenue metrics
+      exp_on_key_metrics.on_osa_revenue_attribution_pct_change,
+      exp_on_key_metrics.on_osa_revenue_attribution_p_value,
+--ocb page metrics
+      exp_on_key_metrics.on_ocb_pct_change,
+      exp_on_key_metrics.on_ocb_p_value,
+--aov metrics
+      exp_on_key_metrics.on_winsorized_aov_pct_change,
+      exp_on_key_metrics.on_winsorized_aov_p_value,
+--engaged metrics
+      exp_on_key_metrics.on_engaged_visits,
+      exp_on_key_metrics.on_engaged_visits_pct_change,
+      exp_on_key_metrics.on_engaged_visits_p_value,
+-- bounce metrics
+      exp_on_key_metrics.on_bounces_pct_change,
+      exp_on_key_metrics.on_bounces_p_value,
+--total orders per browser orders metrics
+      exp_on_key_metrics.on_total_orders_per_browser,
+      exp_on_key_metrics.on_total_orders_per_browser_pct_change,
+      exp_on_key_metrics.on_total_orders_per_browser_p_value,
+--purchase frequency metrics
+      exp_on_key_metrics.on_purchase_freq_pct_change,
+      exp_on_key_metrics.on_purchase_freq_p_value,
+      exp_on_key_metrics.on_purchase_freq_pct_change_cuped,
+      row_number() OVER (PARTITION BY exp_on_key_metrics.experiment_id ORDER BY exp_on_key_metrics.conv_rate_p_value) AS treatment_rank
+  FROM
+    all_experiments ae
+  left join
+    `etsy-data-warehouse-prod`.catapult.exp_on_key_metrics
+      on ae.launch_id=exp_on_key_metrics.experiment_id
+      and exp_on_key_metrics.segmentation = 'any'
+    where (exp_on_key_metrics.experiment_id is null or exp_on_key_metrics.run_date IN (
+      SELECT
+          max(exp_on_key_metrics_0.run_date)
+        FROM
+          `etsy-data-warehouse-prod`.catapult.exp_on_key_metrics AS exp_on_key_metrics_0)
+    )
+  and ae.launch_id NOT IN(
+      SELECT
+          launch_id
+        FROM
+          `etsy-data-warehouse-prod`.etsy_atlas.catapult_launches
+        WHERE launch_percentage IN (0, 100)
+    )
+  ORDER BY 1,2
+    --  exclude ramped experiments
+)
+-- , all_variants as
+select *,
+ count(treatment_rank) over (partition by launch_id) as treatments_per_experiment,
+ ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) as stat_sign_thresold,
+ --conversion rate metrics
+      CASE
+        WHEN conv_rate_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_cr_change,
+--acbv metrics
+      CASE
+        WHEN winsorized_acbv_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_winsorized_acbv_change,
+--prolist metrics
+      CASE
+        WHEN on_prolist_pct_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_prolist_change,
+--add to cart metrics
+      CASE
+        WHEN on_atc_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_atc_change,
+--checkout start metrics
+      CASE
+        WHEN on_checkout_start_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_checkout_start_change,
+--error page vw metrics
+      CASE
+        WHEN on_error_pg_vw_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_error_pg_vw_change,
+--visit frequency metrics
+      CASE
+        WHEN on_visit_freq_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_visit_freq_change,
+-- osa revenue metrics
+      CASE
+        WHEN on_osa_revenue_attribution_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_osa_revenue_attribution_change,
+--ocb page metrics
+      CASE
+        WHEN on_ocb_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_ocb_change,
+--aov metrics
+      CASE
+        WHEN on_winsorized_aov_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_winsorized_aov_change,
+--engaged metrics
+      CASE
+        WHEN on_engaged_visits_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_engaged_visits_change,
+-- bounce metrics
+      CASE
+        WHEN on_bounces_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_bounces_change,
+--total orders per browser orders metrics
+      CASE
+        WHEN on_total_orders_per_browser_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_total_orders_per_browser_change,
+--purchase frequency metrics
+      CASE
+        WHEN on_purchase_freq_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_purchase_freq_change
+from all_variants_minus_stat_sig
+where launch_id = 1305831155216
+group by all 
+
