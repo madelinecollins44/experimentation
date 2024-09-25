@@ -2,28 +2,28 @@ view: active_experiment_summary {
   derived_table: {
     sql:
 WITH all_experiments as (
-  SELECT 
-  DISTINCT l.launch_id, 
-  date(boundary_start_ts) AS start_date, 
+  SELECT
+  DISTINCT l.launch_id,
+  date(boundary_start_ts) AS start_date,
   _date AS last_run_date
-FROM 
+FROM
   `etsy-data-warehouse-prod.catapult_unified.experiment` AS e
-INNER JOIN 
-  `etsy-data-warehouse-prod.etsy_atlas.catapult_experiment_boundaries` AS b 
-    ON UNIX_SECONDS(e.boundary_start_ts) = b.start_epoch 
+INNER JOIN
+  `etsy-data-warehouse-prod.etsy_atlas.catapult_experiment_boundaries` AS b
+    ON UNIX_SECONDS(e.boundary_start_ts) = b.start_epoch
     AND e.experiment_id = b.config_flag
-INNER JOIN 
+INNER JOIN
   `etsy-data-warehouse-prod.etsy_atlas.catapult_launches` AS l ON l.launch_id = b.launch_id
 WHERE _date = CURRENT_DATE()-1
   AND l.state = 1 -- Currently running
   AND delete_date IS NULL -- Remove deleted experiments
 )
-, all_variants AS (
+, all_variants_minus_stat_sig AS (
   SELECT
       ae.launch_id,
       ae.start_date,
       ae.last_run_date,
-      case when exp_on_key_metrics.experiment_id is null then "User Bucketed" else "Browser Bucketed" end as bucketing_type, 
+      case when exp_on_key_metrics.experiment_id is null then "User Bucketed" else "Browser Bucketed" end as bucketing_type,
       exp_on_key_metrics.experiment_id,
       exp_on_key_metrics.variant_name,
       -- DATE(timestamp_seconds(exp_on_key_metrics.bound_start_date)) AS start_date,
@@ -33,106 +33,50 @@ WHERE _date = CURRENT_DATE()-1
       exp_on_key_metrics.conv_rate_pct_change,
       exp_on_key_metrics.conv_rate_p_value,
       exp_on_key_metrics.conv_rate_is_powered,
-      CASE
-        WHEN exp_on_key_metrics.conv_rate_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_cr_change,
 --acbv metrics
       exp_on_key_metrics.winsorized_acbv_pct_change,
       exp_on_key_metrics.winsorized_acbv_p_value,
       exp_on_key_metrics.on_gms,
-      CASE
-        WHEN exp_on_key_metrics.winsorized_acbv_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_winsorized_acbv_change,
 --prolist metrics
       exp_on_key_metrics.on_prolist_pct_change,
       exp_on_key_metrics.on_prolist_pct_p_value,
       exp_on_key_metrics.on_prolist_spend * exp_on_key_metrics.on_browsers / 100 AS on_prolist_spend,
-      CASE
-        WHEN exp_on_key_metrics.on_prolist_pct_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_prolist_change,
 --add to cart metrics
       exp_on_key_metrics.on_atc_pct_change,
       exp_on_key_metrics.on_atc_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_atc_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_atc_change,
 --checkout start metrics
       exp_on_key_metrics.on_checkout_start_pct_change,
       exp_on_key_metrics.on_checkout_start_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_checkout_start_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_checkout_start_change,
 --error page vw metrics
       exp_on_key_metrics.on_error_pg_vw_pct_change,
       exp_on_key_metrics.on_error_pg_vw_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_error_pg_vw_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_error_pg_vw_change,
---visit frequency metrics 
+--visit frequency metrics
       exp_on_key_metrics.on_visit_freq_pct_change,
       exp_on_key_metrics.on_visit_freq_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_visit_freq_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_visit_freq_change,
       exp_on_key_metrics.on_visit_freq_pct_change_cuped,
 -- osa revenue metrics
       exp_on_key_metrics.on_osa_revenue_attribution_pct_change,
       exp_on_key_metrics.on_osa_revenue_attribution_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_osa_revenue_attribution_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_osa_revenue_attribution_change,
 --ocb page metrics
       exp_on_key_metrics.on_ocb_pct_change,
       exp_on_key_metrics.on_ocb_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_ocb_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_ocb_change,
 --aov metrics
       exp_on_key_metrics.on_winsorized_aov_pct_change,
       exp_on_key_metrics.on_winsorized_aov_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_winsorized_aov_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_winsorized_aov_change,
 --engaged metrics
       exp_on_key_metrics.on_engaged_visits,
       exp_on_key_metrics.on_engaged_visits_pct_change,
       exp_on_key_metrics.on_engaged_visits_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_engaged_visits_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_engaged_visits_change,
--- bounce metrics 
+-- bounce metrics
       exp_on_key_metrics.on_bounces_pct_change,
       exp_on_key_metrics.on_bounces_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_bounces_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_bounces_change,
 --total orders per browser orders metrics
       exp_on_key_metrics.on_total_orders_per_browser,
       exp_on_key_metrics.on_total_orders_per_browser_pct_change,
       exp_on_key_metrics.on_total_orders_per_browser_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_total_orders_per_browser_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_total_orders_per_browser_change,
 --purchase frequency metrics
       exp_on_key_metrics.on_purchase_freq_pct_change,
       exp_on_key_metrics.on_purchase_freq_p_value,
-      CASE
-        WHEN exp_on_key_metrics.on_purchase_freq_p_value <= NUMERIC '0.10' THEN 1
-        ELSE 0
-      END AS significant_purchase_freq_change,
       exp_on_key_metrics.on_purchase_freq_pct_change_cuped,
       row_number() OVER (PARTITION BY exp_on_key_metrics.experiment_id ORDER BY exp_on_key_metrics.conv_rate_p_value) AS treatment_rank
   FROM
@@ -157,6 +101,82 @@ WHERE _date = CURRENT_DATE()-1
   ORDER BY 1,2
     --  exclude ramped experiments
 )
+, all_variants as (
+select *,
+ count(treatment_rank) over (partition by launch_id) as treatments_per_experiment,
+ ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) as stat_sign_thresold,
+ --conversion rate metrics
+      CASE
+        WHEN conv_rate_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_cr_change,
+--acbv metrics
+      CASE
+        WHEN winsorized_acbv_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_winsorized_acbv_change,
+--prolist metrics
+      CASE
+        WHEN on_prolist_pct_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_prolist_change,
+--add to cart metrics
+      CASE
+        WHEN on_atc_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_atc_change,
+--checkout start metrics
+      CASE
+        WHEN on_checkout_start_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_checkout_start_change,
+--error page vw metrics
+      CASE
+        WHEN on_error_pg_vw_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_error_pg_vw_change,
+--visit frequency metrics
+      CASE
+        WHEN on_visit_freq_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_visit_freq_change,
+-- osa revenue metrics
+      CASE
+        WHEN on_osa_revenue_attribution_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_osa_revenue_attribution_change,
+--ocb page metrics
+      CASE
+        WHEN on_ocb_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_ocb_change,
+--aov metrics
+      CASE
+        WHEN on_winsorized_aov_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_winsorized_aov_change,
+--engaged metrics
+      CASE
+        WHEN on_engaged_visits_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_engaged_visits_change,
+-- bounce metrics
+      CASE
+        WHEN on_bounces_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_bounces_change,
+--total orders per browser orders metrics
+      CASE
+        WHEN on_total_orders_per_browser_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id)))  THEN 1
+        ELSE 0
+      END AS significant_total_orders_per_browser_change,
+--purchase frequency metrics
+      CASE
+        WHEN on_purchase_freq_p_value <= ((NUMERIC '0.05')/ (count(treatment_rank) over (partition by launch_id))) THEN 1
+        ELSE 0
+      END AS significant_purchase_freq_change
+from all_variants_minus_stat_sig
+group by all)
 , off_gms AS (
   SELECT
       exp_off_key_metrics.experiment_id,
@@ -173,7 +193,8 @@ WHERE _date = CURRENT_DATE()-1
     )
   ORDER BY
     1
-), exp_summary AS (
+)
+, exp_summary AS (
   SELECT
       a.experiment_id,
       a.launch_id,
@@ -181,6 +202,7 @@ WHERE _date = CURRENT_DATE()-1
       s.name,
       s.initiative,
       a.bucketing_type,
+      a.treatments_per_experiment,
       --s.enabling_teams,
       s.launch_group as group_name,
       s.outcome,
@@ -196,7 +218,7 @@ WHERE _date = CURRENT_DATE()-1
       sum(a.on_prolist_spend) AS on_prolist_spend,
       sum(a.on_engaged_visits) as on_engaged_visits,
       max(a.conv_rate_is_powered) as cr_is_powered,
-      -- sig changes 
+      -- sig changes
       max(a.significant_cr_change) AS significant_cr_change,
       max(a.significant_winsorized_acbv_change) AS significant_winsorized_acbv_change,
       max(a.significant_prolist_change) AS significant_prolist_change,
@@ -207,7 +229,7 @@ WHERE _date = CURRENT_DATE()-1
       max(a.significant_osa_revenue_attribution_change) AS significant_osa_revenue_attribution_change,
       max(a.significant_ocb_change) AS significant_ocb_change,
       max(a.significant_winsorized_aov_change) AS significant_winsorized_aov_change,
-      max(a.significant_engaged_visits_change) AS significant_engaged_visits_change,     
+      max(a.significant_engaged_visits_change) AS significant_engaged_visits_change,
       max(a.significant_bounces_change) AS significant_bounces_change,
       max(a.significant_total_orders_per_browser_change) AS significant_total_orders_per_browser_change,
       max(a.significant_purchase_freq_change) AS significant_purchase_freq_change,
@@ -256,7 +278,7 @@ WHERE _date = CURRENT_DATE()-1
       max(CASE
         WHEN a.treatment_rank = 3 THEN a.on_prolist_pct_p_value
       END) AS prolist_p_value_3,
-   --atc 
+   --atc
          max(CASE
         WHEN a.treatment_rank = 1 THEN a.on_atc_pct_change
       END) AS atc_change_1,
@@ -313,7 +335,7 @@ WHERE _date = CURRENT_DATE()-1
       max(CASE
         WHEN a.treatment_rank = 3 THEN a.on_error_pg_vw_p_value
       END) AS error_pg_p_value_3,
---visit frequency metrics 
+--visit frequency metrics
     max(CASE
         WHEN a.treatment_rank = 1 THEN a.on_visit_freq_pct_change
       END) AS visit_freq_p_change_1,
@@ -408,7 +430,7 @@ WHERE _date = CURRENT_DATE()-1
       max(CASE
         WHEN a.treatment_rank = 3 THEN a.on_engaged_visits_p_value
       END) AS engaged_visits_p_value_3,
--- bounce metrics 
+-- bounce metrics
       max(CASE
         WHEN a.treatment_rank = 1 THEN a.on_bounces_pct_change
       END) AS bounces_change_1,
@@ -517,6 +539,7 @@ SELECT
     a_0.experiment_id,
     a_0.launch_id,
     a_0.bucketing_type,
+    a_0.treatments_per_experiment,
     a_0.team,
     a_0.name,
     a_0.initiative,
@@ -545,7 +568,7 @@ SELECT
    significant_osa_revenue_attribution_change,
    significant_ocb_change,
    significant_winsorized_aov_change,
-   significant_engaged_visits_change,     
+   significant_engaged_visits_change,
    significant_bounces_change,
    significant_total_orders_per_browser_change,
    significant_purchase_freq_change,
@@ -647,19 +670,19 @@ ORDER BY
     label: "Experiment ID"
     sql: ${TABLE}.experiment_id ;;
   }
-  
+
   dimension: bucketing_type {
     type: string
     label: "Bucketing Type"
     sql: ${TABLE}.bucketing_type ;;
   }
-  
+
   dimension: launch_id {
     type: number
     label: "Launch ID"
     sql: ${TABLE}.launch_id ;;
   }
-  
+
   dimension: catapult_link {
     type: string
     sql: 'https://atlas.etsycorp.com/catapult/' || experiment_id ;;
@@ -682,6 +705,11 @@ ORDER BY
   dimension: group {
     type: string
     sql: ${TABLE}.group_name ;;
+  }
+
+  dimension: treatments_per_experiment {
+    type: number
+    sql: ${TABLE}.treatments_per_experiment ;;
   }
 
   dimension: enabling_teams {
@@ -731,7 +759,7 @@ ORDER BY
     label: "Significant CR Change"
     sql: ${TABLE}.significant_cr_change = 1 ;;
   }
-  
+
   dimension: significant_winsorized_acbv_change {
     type: yesno
     label: "Significant Winsorized ACBV Change"
@@ -743,37 +771,37 @@ ORDER BY
     label: "Significant ProList Change"
     sql: ${TABLE}.significant_prolist_change = 1 ;;
   }
-  
+
   dimension: significant_atc_change {
     type: yesno
     label: "Significant ATC Change"
     sql: ${TABLE}.significant_atc_change = 1 ;;
   }
-  
+
   dimension: significant_checkout_start_change {
     type: yesno
     label: "Significant Checkout Start Change"
     sql: ${TABLE}.significant_checkout_start_change = 1 ;;
   }
-  
+
   dimension: significant_error_pg_vw_change {
     type: yesno
     label: "Significant Error Page Change"
     sql: ${TABLE}.significant_error_pg_vw_change = 1 ;;
   }
-  
+
   dimension: significant_visit_freq_change {
     type: yesno
     label: "Significant Visit Frequency Change"
     sql: ${TABLE}.significant_visit_freq_change = 1 ;;
   }
-  
+
   dimension: significant_osa_revenue_attribution_change {
     type: yesno
     label: "Significant OSA Revenue Attribution Change"
     sql: ${TABLE}.significant_osa_revenue_attribution_change = 1 ;;
   }
-  
+
   dimension: significant_ocb_change {
     type: yesno
     label: "Significant OCB Change"
@@ -794,19 +822,19 @@ ORDER BY
     label: "Significant Bounces Change"
     sql: ${TABLE}.significant_bounces_change = 1 ;;
   }
-  
+
   dimension: significant_total_orders_per_browser_change {
     type: yesno
     label: "Significant Total Orders Per Browser Change"
     sql: ${TABLE}.significant_total_orders_per_browser_change = 1 ;;
   }
-  
+
   dimension: significant_purchase_freq_change {
     type: yesno
     label: "Significant Purchase Frequency Change"
     sql: ${TABLE}.significant_purchase_freq_change = 1 ;;
   }
-  
+
 
   measure: active_experiment_count{
     type: count_distinct
@@ -818,13 +846,13 @@ ORDER BY
     label: "GMS Per Unit"
     sql: ${TABLE}.gms_per_unit ;;
   }
-  
-  
+
+
   measure: engaged_visits {
     type: sum
     sql: ${TABLE}.on_engaged_visits ;;
   }
-  
+
   measure: cr_change {
     type: number
     label: "CR % Change (Treatment 1)"
@@ -999,28 +1027,28 @@ ORDER BY
     sql: max(prolist_coverage) ;;
   }
 
-## new metrics added 
+## new metrics added
   measure: atc_change {
     type: number
     label: "ATC % Change (Treatment 1)"
     value_format: "0.00%"
     sql: max(atc_change_1) ;;
   }
-  
+
   measure: atc_change_2 {
     type: number
     label: "ATC % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(atc_change_2) ;;
   }
-  
+
   measure: atc_change_3 {
     type: number
     label: "ATC % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(atc_change_3) ;;
   }
-  
+
   measure: max_atc_change {
     type: number
     label: "Max ATC % Change (Across Variants)"
@@ -1028,22 +1056,22 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${atc_change}, 0), IFNULL(${atc_change_2}, ${atc_change}), IFNULL(${atc_change_3}, ${atc_change}));;
   }
-  
-  
+
+
   measure: atc_p_value {
     type: number
     label: "ATC P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(atc_p_value_1) ;;
   }
-  
+
   measure: atc_p_value_2 {
     type: number
     label: "ATC P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(atc_p_value_2) ;;
   }
-  
+
   measure: atc_p_value_3 {
     type: number
     label: "ATC P-value (Treatment 3)"
@@ -1056,21 +1084,21 @@ ORDER BY
     value_format: "0.00%"
     sql: max(checkout_start_change_1) ;;
   }
-  
+
   measure: checkout_start_change_2 {
     type: number
     label: "Checkout Start % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(checkout_start_change_2) ;;
   }
-  
+
   measure: checkout_start_change_3 {
     type: number
     label: "Checkout Start % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(checkout_start_change_3) ;;
   }
-  
+
   measure: max_checkout_start_change {
     type: number
     label: "Max Checkout Start % Change (Across Variants)"
@@ -1078,50 +1106,50 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${checkout_start_change}, 0), IFNULL(${checkout_start_change_2}, ${checkout_start_change}), IFNULL(${checkout_start_change_3}, ${checkout_start_change}));;
   }
-  
-  
+
+
   measure: checkout_start_p_value {
     type: number
     label: "Checkout Start P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(checkout_start_p_value_1) ;;
   }
-  
+
   measure: checkout_start_p_value_2 {
     type: number
     label: "Checkout Start P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(checkout_start_p_value_2) ;;
   }
-  
+
   measure: checkout_start_p_value_3 {
     type: number
     label: "Checkout Start P-value (Treatment 3)"
     value_format: "0.000"
     sql: max(checkout_start_p_value_3) ;;
   }
-  
+
   measure: error_pg_change {
     type: number
     label: "Error Pg %Change (Treatment 1)"
     value_format: "0.00%"
     sql: max(error_pg_change_1) ;;
   }
-  
+
   measure: error_pg_change_2 {
     type: number
     label: "Error Pg %Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(error_pg_change_2) ;;
   }
-  
+
   measure: error_pg_change_3 {
     type: number
     label: "Error Pg %Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(error_pg_change_3) ;;
   }
-  
+
   measure: max_error_pg_change {
     type: number
     label: "Max Error Pg %Change (Across Variants)"
@@ -1129,50 +1157,50 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${error_pg_change}, 0), IFNULL(${error_pg_change_2}, ${error_pg_change}), IFNULL(${error_pg_change_3}, ${error_pg_change}));;
   }
-  
-  
+
+
   measure: error_pg_p_value {
     type: number
     label: "Error PgP-value (Treatment 1)"
     value_format: "0.000"
     sql: max(error_pg_p_value_1) ;;
   }
-  
+
   measure: error_pg_p_value_2 {
     type: number
     label: "Error Pg P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(error_pg_p_value_2) ;;
   }
-  
+
   measure: error_pg_p_value_3 {
     type: number
     label: "Error Pg P-value (Treatment 3)"
     value_format: "0.000"
     sql: max(error_pg_p_value_3) ;;
   }
-  
+
   measure: visit_freq_change {
     type: number
     label: "Visit Frequency % Change (Treatment 1)"
     value_format: "0.00%"
     sql: max(visit_freq_change_1) ;;
   }
-  
+
   measure: visit_freq_change_2 {
     type: number
     label: "Visit Frequency % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(visit_freq_change_2) ;;
   }
-  
+
   measure: visit_freq_change_3 {
     type: number
     label: "Visit Frequency % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(visit_freq_change_3) ;;
   }
-  
+
   measure: max_visit_freq_change {
     type: number
     label: "Max Visit Frequency % Change (Across Variants)"
@@ -1180,22 +1208,22 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${visit_freq_change}, 0), IFNULL(${visit_freq_change_2}, ${visit_freq_change}), IFNULL(${visit_freq_change_3}, ${visit_freq_change}));;
   }
-  
-  
+
+
   measure: visit_freq_p_value {
     type: number
     label: "Visit Frequency P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(visit_freq_p_value_1) ;;
   }
-  
+
   measure: visit_freq_p_value_2 {
     type: number
     label: "Visit Frequency P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(visit_freq_p_value_2) ;;
   }
-  
+
   measure: visit_freq_p_value_3 {
     type: number
     label: "Visit Frequency P-value (Treatment 3)"
@@ -1208,21 +1236,21 @@ ORDER BY
     value_format: "0.00%"
     sql: max(osa_revenue_attribution_change_1) ;;
   }
-  
+
   measure: osa_revenue_attribution_change_2 {
     type: number
     label: "OSA Revenue Attribution % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(osa_revenue_attribution_change_2) ;;
   }
-  
+
   measure: osa_revenue_attribution_change_3 {
     type: number
     label: "OSA Revenue Attribution % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(osa_revenue_attribution_change_3) ;;
   }
-  
+
   measure: max_osa_revenue_attribution_change {
     type: number
     label: "Max OSA Revenue Attribution % Change (Across Variants)"
@@ -1230,50 +1258,50 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${osa_revenue_attribution_change}, 0), IFNULL(${osa_revenue_attribution_change_2}, ${osa_revenue_attribution_change}), IFNULL(${osa_revenue_attribution_change_3}, ${osa_revenue_attribution_change}));;
   }
-  
-  
+
+
   measure: osa_revenue_attribution_p_value {
     type: number
     label: "OSA Revenue Attribution P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(osa_revenue_attribution_p_value_1) ;;
   }
-  
+
   measure: osa_revenue_attribution_p_value_2 {
     type: number
     label: "OSA Revenue Attribution P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(osa_revenue_attribution_p_value_2) ;;
   }
-  
+
   measure: osa_revenue_attribution_p_value_3 {
     type: number
     label: "OSA Revenue Attribution P-value (Treatment 3)"
     value_format: "0.000"
     sql: max(osa_revenue_attribution_p_value_3) ;;
   }
-  
+
   measure: ocb_change {
     type: number
     label: "OCB % Change (Treatment 1)"
     value_format: "0.00%"
     sql: max(ocb_change_1) ;;
   }
-  
+
   measure: ocb_change_2 {
     type: number
     label: "OCB % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(ocb_change_2) ;;
   }
-  
+
   measure: ocb_change_3 {
     type: number
     label: "OCB % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(ocb_change_3) ;;
   }
-  
+
   measure: max_ocb_change {
     type: number
     label: "Max OCB % Change (Across Variants)"
@@ -1281,22 +1309,22 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${ocb_change}, 0), IFNULL(${ocb_change_2}, ${ocb_change}), IFNULL(${ocb_change_3}, ${ocb_change}));;
   }
-  
-  
+
+
   measure: ocb_p_value {
     type: number
     label: "OCB P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(ocb_p_value_1) ;;
   }
-  
+
   measure: ocb_p_value_2 {
     type: number
     label: "OCB P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(ocb_p_value_2) ;;
   }
-  
+
   measure: ocb_p_value_3 {
     type: number
     label: "OCB P-value (Treatment 3)"
@@ -1309,21 +1337,21 @@ ORDER BY
     value_format: "0.00%"
     sql: max(winsorized_aov_change_1) ;;
   }
-  
+
   measure: winsorized_aov_change_2 {
     type: number
     label: "Winsorized AOV % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(winsorized_aov_change_2) ;;
   }
-  
+
   measure: winsorized_aov_change_3 {
     type: number
     label: "Winsorized AOV % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(winsorized_aov_change_3) ;;
   }
-  
+
   measure: max_winsorized_aov_change {
     type: number
     label: "Max Winsorized AOV % Change (Across Variants)"
@@ -1331,22 +1359,22 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${winsorized_aov_change}, 0), IFNULL(${winsorized_aov_change_2}, ${winsorized_aov_change}), IFNULL(${winsorized_aov_change_3}, ${winsorized_aov_change}));;
   }
-  
-  
+
+
   measure: winsorized_aov_p_value {
     type: number
     label: "Winsorized AOV P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(winsorized_aov_p_value_1) ;;
   }
-  
+
   measure: winsorized_aov_p_value_2 {
     type: number
     label: "Winsorized AOV P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(winsorized_aov_p_value_2) ;;
   }
-  
+
   measure: winsorized_aov_p_value_3 {
     type: number
     label: "Winsorized AOV P-value (Treatment 3)"
@@ -1359,21 +1387,21 @@ ORDER BY
     value_format: "0.00%"
     sql: max(engaged_visits_change_1) ;;
   }
-  
+
   measure: engaged_visits_change_2 {
     type: number
     label: "Engaged Visits % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(engaged_visits_change_2) ;;
   }
-  
+
   measure: engaged_visits_change_3 {
     type: number
     label: "Engaged Visits % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(engaged_visits_change_3) ;;
   }
-  
+
   measure: max_engaged_visits_change {
     type: number
     label: "Max Engaged Visits % Change (Across Variants)"
@@ -1381,22 +1409,22 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${engaged_visits_change}, 0), IFNULL(${engaged_visits_change_2}, ${engaged_visits_change}), IFNULL(${engaged_visits_change_3}, ${engaged_visits_change}));;
   }
-  
-  
+
+
   measure: engaged_visits_p_value {
     type: number
     label: "Engaged Visits P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(engaged_visits_p_value_1) ;;
   }
-  
+
   measure: engaged_visits_p_value_2 {
     type: number
     label: "Engaged Visits P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(engaged_visits_p_value_2) ;;
   }
-  
+
   measure: engaged_visits_p_value_3 {
     type: number
     label: "Engaged Visits P-value (Treatment 3)"
@@ -1408,21 +1436,21 @@ ORDER BY
     value_format: "0.00%"
     sql: max(bounces_change_1) ;;
   }
-  
+
   measure: bounces_change_2 {
     type: number
     label: "Bounces % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(bounces_change_2) ;;
   }
-  
+
   measure: bounces_change_3 {
     type: number
     label: "Bounces % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(bounces_change_3) ;;
   }
-  
+
   measure: max_bounces_change {
     type: number
     label: "Max Bounces % Change (Across Variants)"
@@ -1430,22 +1458,22 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${bounces_change}, 0), IFNULL(${bounces_change_2}, ${bounces_change}), IFNULL(${bounces_change_3}, ${bounces_change}));;
   }
-  
-  
+
+
   measure: bounces_p_value {
     type: number
     label: "Bounces P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(bounces_p_value_1) ;;
   }
-  
+
   measure: bounces_p_value_2 {
     type: number
     label: "Bounces P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(bounces_p_value_2) ;;
   }
-  
+
   measure: bounces_p_value_3 {
     type: number
     label: "Bounces P-value (Treatment 3)"
@@ -1458,21 +1486,21 @@ ORDER BY
     value_format: "0.00%"
     sql: max(total_orders_per_browser_change_1) ;;
   }
-  
+
   measure: total_orders_per_browser_change_2 {
     type: number
     label: "Total Orders Per Browser % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(total_orders_per_browser_change_2) ;;
   }
-  
+
   measure: total_orders_per_browser_change_3 {
     type: number
     label: "Total Orders Per Browser % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(total_orders_per_browser_change_3) ;;
   }
-  
+
   measure: max_total_orders_per_browser_change {
     type: number
     label: "Max Total Orders Per Browser % Change (Across Variants)"
@@ -1480,22 +1508,22 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${total_orders_per_browser_change}, 0), IFNULL(${total_orders_per_browser_change_2}, ${total_orders_per_browser_change}), IFNULL(${total_orders_per_browser_change_3}, ${total_orders_per_browser_change}));;
   }
-  
-  
+
+
   measure: total_orders_per_browser_p_value {
     type: number
     label: "Total Orders Per Browser P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(total_orders_per_browser_p_value_1) ;;
   }
-  
+
   measure: total_orders_per_browser_p_value_2 {
     type: number
     label: "Total Orders Per Browser P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(total_orders_per_browser_p_value_2) ;;
   }
-  
+
   measure: total_orders_per_browser_p_value_3 {
     type: number
     label: "Total Orders Per Browser P-value (Treatment 3)"
@@ -1508,21 +1536,21 @@ ORDER BY
     value_format: "0.00%"
     sql: max(purchase_freq_change_1) ;;
   }
-  
+
   measure: purchase_freq_change_2 {
     type: number
     label: "Purchase Frequency % Change (Treatment 2)"
     value_format: "0.00%"
     sql: max(purchase_freq_change_2) ;;
   }
-  
+
   measure: purchase_freq_change_3 {
     type: number
     label: "Purchase Frequency % Change (Treatment 3)"
     value_format: "0.00%"
     sql: max(purchase_freq_change_3) ;;
   }
-  
+
   measure: max_purchase_freq_change {
     type: number
     label: "Max Purchase Frequency % Change (Across Variants)"
@@ -1530,21 +1558,21 @@ ORDER BY
     sql:
     GREATEST(IFNULL(${purchase_freq_change}, 0), IFNULL(${purchase_freq_change_2}, ${purchase_freq_change}), IFNULL(${purchase_freq_change_3}, ${purchase_freq_change}));;
   }
-  
+
   measure: purchase_freq_p_value {
     type: number
     label: "Purchase Frequency P-value (Treatment 1)"
     value_format: "0.000"
     sql: max(purchase_freq_p_value_1) ;;
   }
-  
+
   measure: purchase_freq_p_value_2 {
     type: number
     label: "Purchase Frequency P-value (Treatment 2)"
     value_format: "0.000"
     sql: max(purchase_freq_p_value_2) ;;
   }
-  
+
   measure: purchase_freq_p_value_3 {
     type: number
     label: "Purchase Frequency P-value (Treatment 3)"
@@ -1552,4 +1580,3 @@ ORDER BY
     sql: max(purchase_freq_p_value_3) ;;
   }
 }
-
