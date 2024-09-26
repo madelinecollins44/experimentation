@@ -127,3 +127,86 @@ SELECT
    GROUP BY all
 ORDER BY
   days_running
+
+
+
+-----EXTRAS TO ADD IN IF I CAN 
+--includes active
+with platforms as (
+-- This CTE gets the platform for each experiment (launch_id)
+select 
+  distinct launch_id
+  , update_date
+  , name as platform
+  , dense_rank() over(partition by launch_id  order by update_date desc) AS row_num
+FROM `etsy-data-warehouse-prod.etsy_atlas.catapult_launches_expected_platforms`
+qualify row_num = 1
+)
+, plats_agg as (
+select 
+  launch_id
+  , STRING_AGG(platform ORDER BY platform) as platform
+from plats
+group by all
+)
+, experiment_pages_ran_on AS (
+-- This CTE gets the pages that each experiment is run on 
+SELECT  
+  DISTINCT launch_id
+  , update_date
+  , row_number() over(partition by launch_id  order by update_date desc) as row_num
+  , sum(case when name = "Unavailable Listing Page" then 1 else 0 end) as unavailable_listing
+  , sum(case when name = "Category Page" then 1 else 0 end) as category
+  , sum(case when name = "Checkout Page" then 1 else 0 end) as checkout
+  , sum(case when name = "Cart" then 1 else 0 end) as cart
+  , sum(case when name = "Other" then 1 else 0 end) as other 
+  , sum(case when name = "Listing" then 1 else 0 end) as listing
+  , sum(case when name = "Market" then 1 else 0 end) as market
+  , sum(case when name = "Sitewide" then 1 else 0 end) as sitewide
+  , sum(case when name = "Shop Home" then 1 else 0 end) as shop_home
+  , sum(case when name = "Home" then 1 else 0 end) as home
+  , sum(case when name = "Sold Out Listing Page" then 1 else 0 end) as sold_out_listing
+  , sum(case when name = "Search" then 1 else 0 end) as search 
+from `etsy-data-warehouse-prod.etsy_atlas.catapult_launches_expected_pages`
+where
+  1=1
+group by all
+qualify row_num = 1
+)
+, exp_coverage as (
+-- This CTE gets the coverage %'s for each experiment. It should match up with what's shown in the catapult page
+select
+  launch_id
+  , coverage_name
+  , date(timestamp_seconds(boundary_start_sec)) as start_date
+  , date(timestamp_seconds(boundary_end_sec)) as end_date
+  , dense_rank() over (partition by launch_id, date(timestamp_seconds(boundary_start_sec)) order by _date desc) as date_rank
+  , cast(coverage_value/100 as float64) as coverage_value
+from `etsy-data-warehouse-prod.catapult.results_coverage_day` 
+qualify date_rank=1
+)
+, exp_coverage_agg as (
+select
+  launch_id
+  , start_date
+  , end_date
+  , max(case when coverage_name = 'GMS coverage' then coverage_value else null end) as gms_coverage
+  , max(case when coverage_name = 'Traffic coverage' then coverage_value else null end) as traffic_coverage
+  , max(case when coverage_name = 'Offsite Ads coverage' then coverage_value else null end) as osa_coverage
+  , max(case when coverage_name = 'Prolist coverage' then coverage_value else null end) as prolist_coverage
+from exp_coverage
+group by  
+  all
+)
+, exp_metrics as (
+-- This CTE gathers all the metric ids and the corresponding names included in the experiment, along with whether or not a metric is the success metric.
+select
+  cem.launch_id
+  , cem.metric_id
+  , cm.name
+  , cem.is_success_criteria
+from `etsy-data-warehouse-prod.etsy_atlas.catapult_experiment_metrics`  cem
+left join `etsy-data-warehouse-prod.etsy_atlas.catapult_metrics` cm
+  on cem.metric_id = cm.metric_id
+group by all -- has duplicate rows
+)
