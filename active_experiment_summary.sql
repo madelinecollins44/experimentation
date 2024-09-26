@@ -958,3 +958,32 @@ from all_variants_minus_stat_sig
 where launch_id = 1305831155216
 group by all 
 
+------check to make sure all active expeirments are accounted for
+  ------on 9/26, explore showed: browser: 65, user: 18
+--check source of truth
+SELECT bucketing_id_type, count(distinct experiment_id) as number_experiments
+FROM `etsy-data-warehouse-prod.catapult_unified.experiment`
+WHERE _date = "2024-09-25"
+  AND (bucketing_id_type = 1 or bucketing_id_type = 2)
+    group by all
+--1: 67
+--2: 19
+
+--check # of experiments in explore
+  SELECT
+  count(distinct l.launch_id) as experiments,
+  bucketing_id_type
+FROM
+  `etsy-data-warehouse-prod.catapult_unified.experiment` AS e
+INNER JOIN
+  `etsy-data-warehouse-prod.etsy_atlas.catapult_experiment_boundaries` AS b
+    ON UNIX_SECONDS(e.boundary_start_ts) = b.start_epoch
+    AND e.experiment_id = b.config_flag
+INNER JOIN
+  `etsy-data-warehouse-prod.etsy_atlas.catapult_launches` AS l ON l.launch_id = b.launch_id
+WHERE _date = CURRENT_DATE()-1
+  AND l.state = 1 -- Currently running
+  AND delete_date IS NULL -- Remove deleted experiments
+group by all 
+-- 1: 69
+-- 2: 19
