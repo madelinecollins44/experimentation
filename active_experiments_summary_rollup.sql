@@ -131,7 +131,7 @@ ORDER BY
 
   
 -------METRICS HERE
-  WITH  metrics_list as (
+WITH  metrics_list as (
 -- This CTE grabs all of the metric values from the experiment.
 -- Since the results_metric_day table contains values for each day of the experiment (and multiple boundaries if relevant), the date_rnk is used to get the last date of the experiment.
 -- There can be multiple values for a metric on the final day (usually if there is a metric that also has a "cuped" value), the metric_rnk is used to grab the metric that has been "cuped" if there
@@ -148,14 +148,10 @@ select
   , metric_value_treatment
   , relative_change
   , p_value
-  , dense_rank() over(partition by launch_id, boundary_start_sec order by metric_variant_name asc) as variant_rnk
-  , dense_rank() over(partition by launch_id, boundary_start_sec order by _date desc) as date_rnk
-  , row_number() over(partition by launch_id, metric_variant_name, boundary_start_sec,_date ,lower(metric_display_name) order by length(metric_stat_methodology) desc) as metric_rnk
 from `etsy-data-warehouse-prod.catapult.results_metric_day` 
 where 
   1=1
-  and metric_value_treatment is not null -- this gets rid of all control value rows 
-qualify date_rnk=1 and metric_rnk=1
+qualify row_number() over(partition by launch_id, metric_variant_name, metric_display_name order by boundary_start_sec desc) = 1 -- grabs most recent date for each experiment, variant, metric
 )
 , metrics_agg as (
 -- This CTE aggregates all of the relevant metrics. Here is where we can add in new metrics if needed. TO ADD purchase frequency 
