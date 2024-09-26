@@ -1,4 +1,6 @@
------TAKE BASE FROM EXISTING ROLLUP, NEED TO ADD IN METRICS USING RESULTS_METRICS_DAY
+-----------------------------------------------------------------------------
+--TAKE BASE FROM EXISTING ROLLUP, NEED TO ADD IN METRICS USING RESULTS_METRICS_DAY
+-----------------------------------------------------------------------------
 WITH all_experiments as (
   SELECT
   DISTINCT l.launch_id,
@@ -129,9 +131,11 @@ ORDER BY
   days_running
 
 
-  
--------METRICS HERE
-WITH all_experiments as (
+-----------------------------------------------------------------------------
+-- METRICS HERE
+----------------------------------------------------------------------------
+
+  WITH all_experiments as (
   SELECT
   DISTINCT l.launch_id,
   date(boundary_start_ts) AS start_date,
@@ -151,17 +155,14 @@ INNER JOIN
 WHERE _date = CURRENT_DATE()-1
   AND l.state = 1 -- Currently running
   AND delete_date IS NULL -- Remove deleted experiments
-),
-  metrics_list as (
+),metrics_list as (
 -- This CTE grabs all of the metric values from the experiment.
 -- Since the results_metric_day table contains values for each day of the experiment (and multiple boundaries if relevant), the date_rnk is used to get the last date of the experiment.
 -- There can be multiple values for a metric on the final day (usually if there is a metric that also has a "cuped" value), the metric_rnk is used to grab the metric that has been "cuped" if there
 -- are multiple values by choosing the one with the longest metric_stat_methodology. 
 select  
-  launch_id
+  ae.launch_id
   , _date
-  , boundary_start_sec as start_date
-  , boundary_end_sec as end_date
   , metric_variant_name
   , metric_display_name
   , metric_id
@@ -169,11 +170,12 @@ select
   , metric_value_treatment
   , relative_change
   , p_value
-from all_experiments 
-inner join `etsy-data-warehouse-prod.catapult.results_metric_day` using (launch_id)
+from all_experiments ae
+inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
+  on ae.launch_id=rmd.launch_id
+  and ae.last_run_date=rmd._date -- join on most recent date to get most recent data
 where 
   1=1
-qualify row_number() over(partition by launch_id, metric_variant_name, metric_display_name order by boundary_start_sec desc) = 1 -- grabs most recent date for each experiment, variant, metric
 )
 , metrics_agg as (
 -- This CTE aggregates all of the relevant metrics. Here is where we can add in new metrics if needed. TO ADD purchase frequency 
@@ -578,7 +580,9 @@ where
 );
 
 
------EXTRAS TO ADD IN IF I CAN 
+-----------------------------------------------------------------------------
+--EXTRAS TO ADD IN IF I CAN 
+-----------------------------------------------------------------------------
 --includes active
 with platforms as (
 -- This CTE gets the platform for each experiment (launch_id)
