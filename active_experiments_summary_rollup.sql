@@ -134,7 +134,7 @@ ORDER BY
 -----------------------------------------------------------------------------
 -- METRICS HERE
 ----------------------------------------------------------------------------
-  
+ 
  --grab all active experiments 
   WITH all_experiments as (
   SELECT
@@ -172,12 +172,13 @@ select
   , relative_change
   , is_significant
   , p_value
+  , row_number() over(partition by ae.launch_id, metric_variant_name, boundary_start_sec,_date ,lower(metric_display_name) order by length(metric_stat_methodology) desc) as metric_rnk
 from all_experiments ae
 inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
   on ae.launch_id=rmd.launch_id
   and ae.last_run_date=rmd._date -- join on most recent date to get most recent data
+qualify metric_rnk=1 -- prrioitized cuped values for pval
 )
--- select * from metrics_list where metric_display_name in ('Orders per Unit')
 -- -- find control + treatment metrics 
 , all_variants as (
   select
@@ -191,7 +192,7 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'conversion rate' then relative_change else null end)/100 as pct_change_conversion_rate
     , max(case when lower(metric_display_name) = 'conversion rate' then p_value else null end) as pval_conversion_rate
     , max(case when lower(metric_display_name) = 'conversion rate' then is_significant else null end) as significance_conversion_rate
-    , max(case when lower(metric_display_name) = 'conversion rate' and relative_change > 0 then is_significant else null end) as positive_significance_conversion_rate
+    , max(case when lower(metric_display_name) = 'conversion rate' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_conversion_rate
 
 --visit frequency
     , max(case when lower(metric_display_name) = 'mean visits' then metric_value_control else null end) as control_mean_visits
@@ -199,14 +200,14 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'mean visits' then relative_change else null end)/100 as pct_change_mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then p_value else null end) as pval_mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then is_significant else null end) as significance_mean_visits
-    , max(case when lower(metric_display_name) = 'mean visits' and relative_change > 0 then is_significant else null end) as positive_significance_mean_visits
+    , max(case when lower(metric_display_name) = 'mean visits' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_mean_visits
 
     , max(case when lower(metric_display_name) = 'gms per unit' then metric_value_control else null end) as control_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then metric_value_treatment else null end) as gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then relative_change else null end)/100 as pct_change_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then p_value else null end) as pval_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then is_significant else null end) as significance_gms_per_unit
-    , max(case when lower(metric_display_name) = 'gms per unit' and relative_change > 0 then is_significant else null end) as positive_significance_gms_per_unit
+    , max(case when lower(metric_display_name) = 'gms per unit' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_gms_per_unit
 
     , max(case when lower(metric_display_name) = 'percent with error page view' then metric_value_control else null end) as control_percent_error_pg_view
     , max(case when lower(metric_display_name) = 'percent with error page view' then relative_change else null end)/100 as pct_change_percent_error_pg_view
@@ -219,14 +220,14 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then relative_change else null end)/100 as pct_change_mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then p_value else null end) as pval_mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then is_significant else null end) as significance_engaged_visit
-    , max(case when lower(metric_display_name) = 'mean engaged_visit' and relative_change > 0 then is_significant else null end) as positive_significance_engaged_visit
+    , max(case when lower(metric_display_name) = 'mean engaged_visit' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_engaged_visit
 
     , max(case when lower(metric_display_name) = 'bounces' then metric_value_control else null end) as control_bounces
     , max(case when lower(metric_display_name) = 'bounces' then metric_value_treatment else null end) as bounces
     , max(case when lower(metric_display_name) = 'bounces' then relative_change else null end)/100 as pct_change_bounces
     , max(case when lower(metric_display_name) = 'bounces' then p_value else null end) as pval_bounces
     , max(case when lower(metric_display_name) = 'bounces' then is_significant else null end) as significance_bounces
-    , max(case when lower(metric_display_name)= 'bounces' and relative_change > 0 then is_significant else null end) as positive_significance_bounces
+    , max(case when lower(metric_display_name)= 'bounces' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_bounces
 
     -- , max(case when metric_display_name) = 'Mean total_winsorized_gms' then metric_value_control else null end) as control_mean_total_winsorized_gms
     -- , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then metric_value_treatment else null end) as mean_total_winsorized_gms
@@ -240,21 +241,21 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'ads conversion rate' then relative_change else null end)/100 as pct_change_ads_cvr
     , max(case when lower(metric_display_name) = 'ads conversion rate' then p_value else null end) as pval_ads_cvr
     , max(case when lower(metric_display_name) = 'ads conversion rate' then is_significant else null end) as significance_ads_cvr
-    , max(case when lower(metric_display_name) = 'ads conversion rate'  and relative_change > 0 then is_significant else null end) as positive_significance_ads_cvr
+    , max(case when lower(metric_display_name) = 'ads conversion rate' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_ads_cvr
 
     , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then metric_value_control else null end) as control_ads_acxv
     , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then metric_value_treatment else null end) as ads_acxv
     , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then relative_change else null end)/100 as pct_change_ads_acxv
     , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then p_value else null end) as pval_ads_acxv
     , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then is_significant else null end) as significance_ads_acxv
-    , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)'  and relative_change > 0 then is_significant else null end) as positive_significance_ads_acxv
+    , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_ads_acxv
 
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then metric_value_control else null end) as control_winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then metric_value_treatment else null end) as winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then relative_change else null end)/100 as pct_change_winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then p_value else null end) as pval_winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then is_significant else null end) as significance_winsorized_acxv
-    , max(case when lower(metric_display_name) = 'winsorized ac*v' and relative_change > 0 then is_significant else null end) as positive_significance_winsorized_acxv
+    , max(case when lower(metric_display_name) = 'winsorized ac*v' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_winsorized_acxv
 
     -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view') then metric_value_control else null end) as control_pct_listing_view
     -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then metric_value_treatment else null end) as pct_listing_view
@@ -266,8 +267,8 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_treatment else null end) as ocb
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  then relative_change else null end)/100 as pct_change_ocb
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  then p_value else null end) as pval_ocb
-    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  then is_significant else null end) as significance_ocb
-    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  and relative_change > 0 then is_significant else null end) as positive_significance_ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then is_significant else null end) as significance_ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_ocb
 
 --purchase frequency
     , max(case when metric_display_name = 'Orders per Unit' then metric_value_control else null end) as control_opu
@@ -275,47 +276,47 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'total orders per unit'  then relative_change else null end)/100 as pct_change_opu
     , max(case when lower(metric_display_name) = 'total orders per unit'  then p_value else null end) as pval_opu
     , max(case when lower(metric_display_name) = 'total orders per unit'  then is_significant else null end) as significance_opu
-    , max(case when lower(metric_display_name) = 'total orders per unit' and relative_change > 0 then is_significant else null end) as positive_significance_opu
+    , max(case when lower(metric_display_name) = 'total orders per unit' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_opu
 
     , max(case when lower(metric_display_name) = 'percent with add to cart' then metric_value_control else null end) as control_atc
     , max(case when lower(metric_display_name) = 'percent with add to cart' then metric_value_treatment else null end) as atc
     , max(case when lower(metric_display_name) = 'percent with add to cart' then relative_change else null end)/100 as pct_change_atc
     , max(case when lower(metric_display_name) = 'percent with add to cart'then p_value else null end) as pval_atc
     , max(case when lower(metric_display_name) = 'percent with add to cart' then is_significant else null end) as significance_atc
-    , max(case when lower(metric_display_name) = 'percent with add to cart'and relative_change > 0 then is_significant else null end) as positive_significance_atc
+    , max(case when lower(metric_display_name) = 'percent with add to cart'and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_atc
 
     , max(case when lower(metric_display_name) = 'percent with checkout_start' then metric_value_control else null end) as control_checkout_start
     , max(case when lower(metric_display_name) = 'percent with checkout_start' then metric_value_treatment else null end) as checkout_start
     , max(case when lower(metric_display_name) = 'percent with checkout_start' then relative_change else null end)/100 as pct_change_checkout_start
     , max(case when lower(metric_display_name) = 'percent with checkout_start' then p_value else null end) as pval_checkout_start
     , max(case when lower(metric_display_name) = 'percent with checkout_start' then is_significant else null end) as significance_checkout_start
-    , max(case when lower(metric_display_name) = 'percent with checkout_start' and relative_change > 0 then is_significant else null end) as positive_significance_checkout_start
+    , max(case when lower(metric_display_name) = 'percent with checkout_start' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_checkout_start
 
     , max(case when lower(metric_display_name) = 'winsorized aov' then metric_value_control else null end) as control_aov
     , max(case when lower(metric_display_name) = 'winsorized aov' then metric_value_treatment else null end) as aov
     , max(case when lower(metric_display_name) = 'winsorized aov' then relative_change else null end)/100 as pct_change_aov
     , max(case when lower(metric_display_name) = 'winsorized aov' then p_value else null end) as pval_aov  
     , max(case when lower(metric_display_name) = 'winsorized aov' then is_significant else null end) as significance_aov
-    , max(case when lower(metric_display_name) = 'winsorized aov' and relative_change > 0 then is_significant else null end) as positive_significance_aov
+    , max(case when lower(metric_display_name) = 'winsorized aov' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_aov
 
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then metric_value_control else null end) as control_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then metric_value_treatment else null end) as mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then relative_change else null end)/100 as pct_change_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then p_value else null end) as pval_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then is_significant else null end) as significance_mean_prolist_spend
-    , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') and relative_change > 0 then is_significant else null end) as positive_significance_mean_prolist_spend
+    , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_mean_prolist_spend
 
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then metric_value_control else null end) as control_mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then metric_value_treatment else null end) as mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then relative_change else null end)/100 as pct_change_mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue')  then p_value else null end) as pval_mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue')  then is_significant else null end) as significance_mean_osa_revenue
-    , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') and relative_change > 0 then is_significant else null end) as positive_significance_mean_osa_revenue
+    , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_mean_osa_revenue
     , row_number() over (partition by launch_id order by max(case when lower(metric_display_name) = 'conversion rate' then p_value else null end)) AS treatment_rank
   from metrics_list
 where 
   1=1
-  -- and launch_id = 1300685197341
+  -- and launch_id = 1303095458918
   and metric_variant_name != 'off' --removed control as a metric_variant_name, but control metrics will still be there 
   group by all 
 )
