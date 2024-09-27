@@ -251,13 +251,12 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then p_value else null end) as pval_pct_listing_view
     -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then is_significant else null end) as significance_pct_listing_view
 
-    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_control else null end) as control_ocb
-    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_treatment else null end) as ocb
-    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then relative_change else null end)/100 as pct_change_ocb
-    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then p_value else null end) as pval_ocb
-    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then is_significant else null end) as significance_ocb
-    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' and relative_change > 0 then is_significant else null end) as positive_significance_ocb
-
+        , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then metric_value_control else null end) as control_ocb
+    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then metric_value_treatment else null end) as ocb
+    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then relative_change else null end)/100 as pct_change_ocb
+    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then p_value else null end) as pval_ocb
+    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then is_significant else null end) as significance_ocb
+    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' and relative_change > 0 then is_significant else null end) as positive_significance_ocb
 --purchase frequency
     , max(case when lower(metric_display_name) = 'total orders per unit' then metric_value_control else null end) as control_opu
     , max(case when lower(metric_display_name) = 'total orders per unit' then metric_value_treatment else null end) as opu
