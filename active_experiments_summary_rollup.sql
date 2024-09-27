@@ -134,7 +134,7 @@ ORDER BY
 -----------------------------------------------------------------------------
 -- METRICS HERE
 ----------------------------------------------------------------------------
-  
+ 
  --grab all active experiments 
   WITH all_experiments as (
   SELECT
@@ -177,7 +177,7 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
   on ae.launch_id=rmd.launch_id
   and ae.last_run_date=rmd._date -- join on most recent date to get most recent data
 )
--- select * from metrics_list where metric_display_name = 'Percent with checkout_start'
+-- select * from metrics_list where metric_display_name in ('Orders per Unit')
 -- -- find control + treatment metrics 
 , all_variants as (
   select
@@ -251,40 +251,42 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then p_value else null end) as pval_pct_listing_view
     -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then is_significant else null end) as significance_pct_listing_view
 
-        , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then metric_value_control else null end) as control_ocb
-    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then metric_value_treatment else null end) as ocb
-    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then relative_change else null end)/100 as pct_change_ocb
-    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then p_value else null end) as pval_ocb
-    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' then is_significant else null end) as significance_ocb
-    , max(case when metric_display_name = 'Orders per Converting Browser (OCB)' and relative_change > 0 then is_significant else null end) as positive_significance_ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_control else null end) as control_ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_treatment else null end) as ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  then relative_change else null end)/100 as pct_change_ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  then p_value else null end) as pval_ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  then is_significant else null end) as significance_ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  and relative_change > 0 then is_significant else null end) as positive_significance_ocb
+
 --purchase frequency
-    , max(case when lower(metric_display_name) = 'total orders per unit' then metric_value_control else null end) as control_opu
-    , max(case when lower(metric_display_name) = 'total orders per unit' then metric_value_treatment else null end) as opu
-    , max(case when lower(metric_display_name) = 'total orders per unit' then relative_change else null end)/100 as pct_change_opu
-    , max(case when lower(metric_display_name) = 'total orders per unit' then p_value else null end) as pval_opu
-    , max(case when lower(metric_display_name) = 'total orders per unit' then is_significant else null end) as significance_opu
-    , max(case when lower(metric_display_name) = 'total orders per unit' and relative_change > 0 then is_significant else null end) as positive_significance_opu
+----total orders per unit is deprecated
+    , max(case when metric_display_name = 'Orders per Unit' then metric_value_control else null end) as control_opu
+    , max(case when metric_display_name = 'Orders per Unit' then metric_value_treatment else null end) as opu
+    , max(case when metric_display_name = 'Orders per Unit'  then relative_change else null end)/100 as pct_change_opu
+    , max(case when metric_display_name = 'Orders per Unit' then p_value else null end) as pval_opu
+    , max(case when metric_display_name = 'Orders per Unit'  then is_significant else null end) as significance_opu
+    , max(case when metric_display_name = 'Orders per Unit' and relative_change > 0 then is_significant else null end) as positive_significance_opu
 
-    , max(case when metric_display_name = 'Percent with add to cart' then metric_value_control else null end) as control_atc
-    , max(case when metric_display_name  = 'Percent with add to cart' then metric_value_treatment else null end) as atc
-    , max(case when metric_display_name  = 'Percent with add to cart' then relative_change else null end)/100 as pct_change_atc
-    , max(case when metric_display_name  = 'Percent with add to cart' then p_value else null end) as pval_atc
-    , max(case when metric_display_name  = 'Percent with add to cart' then is_significant else null end) as significance_atc
-    , max(case when metric_display_name  = 'Percent with add to cart' and relative_change > 0 then is_significant else null end) as positive_significance_atc
+    , max(case when lower(metric_display_name) = 'percent with add to cart' then metric_value_control else null end) as control_atc
+    , max(case when lower(metric_display_name) = 'percent with add to cart' then metric_value_treatment else null end) as atc
+    , max(case when lower(metric_display_name) = 'percent with add to cart' then relative_change else null end)/100 as pct_change_atc
+    , max(case when lower(metric_display_name) = 'percent with add to cart'then p_value else null end) as pval_atc
+    , max(case when lower(metric_display_name) = 'percent with add to cart' then is_significant else null end) as significance_atc
+    , max(case when lower(metric_display_name) = 'percent with add to cart'and relative_change > 0 then is_significant else null end) as positive_significance_atc
 
-    , max(case when metric_display_name = 'Percent with checkout_start' then metric_value_control else null end) as control_checkout_start
-    , max(case when metric_display_name  = 'Percent with checkout_start' then metric_value_treatment else null end) as checkout_start
-    , max(case when metric_display_name  = 'Percent with checkout_start' then relative_change else null end)/100 as pct_change_checkout_start
-    , max(case when metric_display_name  = 'Percent with checkout_start' then p_value else null end) as pval_checkout_start
-    , max(case when metric_display_name  = 'Percent with checkout_start' then is_significant else null end) as significance_checkout_start
-    , max(case when metric_display_name  = 'Percent with checkout_start' and relative_change > 0 then is_significant else null end) as positive_significance_checkout_start
+    , max(case when lower(metric_display_name) = 'percent with checkout_start' then metric_value_control else null end) as control_checkout_start
+    , max(case when lower(metric_display_name) = 'percent with checkout_start' then metric_value_treatment else null end) as checkout_start
+    , max(case when lower(metric_display_name) = 'percent with checkout_start' then relative_change else null end)/100 as pct_change_checkout_start
+    , max(case when lower(metric_display_name) = 'percent with checkout_start' then p_value else null end) as pval_checkout_start
+    , max(case when lower(metric_display_name) = 'percent with checkout_start' then is_significant else null end) as significance_checkout_start
+    , max(case when lower(metric_display_name) = 'percent with checkout_start' and relative_change > 0 then is_significant else null end) as positive_significance_checkout_start
 
-    , max(case when metric_display_name = 'Winsorized AOV' then metric_value_control else null end) as control_aov
-    , max(case when metric_display_name = 'Winsorized AOV' then metric_value_treatment else null end) as aov
-    , max(case when metric_display_name = 'Winsorized AOV' then relative_change else null end)/100 as pct_change_aov
-    , max(case when metric_display_name= 'Winsorized AOV' then p_value else null end) as pval_aov  
-    , max(case when metric_display_name = 'Winsorized AOV' then is_significant else null end) as significance_aov
-    , max(case when metric_display_name = 'Winsorized AOV' and relative_change > 0 then is_significant else null end) as positive_significance_aov
+    , max(case when lower(metric_display_name) = 'winsorized aov' then metric_value_control else null end) as control_aov
+    , max(case when lower(metric_display_name) = 'winsorized aov' then metric_value_treatment else null end) as aov
+    , max(case when lower(metric_display_name) = 'winsorized aov' then relative_change else null end)/100 as pct_change_aov
+    , max(case when lower(metric_display_name) = 'winsorized aov' then p_value else null end) as pval_aov  
+    , max(case when lower(metric_display_name) = 'winsorized aov' then is_significant else null end) as significance_aov
+    , max(case when lower(metric_display_name) = 'winsorized aov' and relative_change > 0 then is_significant else null end) as positive_significance_aov
 
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then metric_value_control else null end) as control_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then metric_value_treatment else null end) as mean_prolist_spend
@@ -303,11 +305,11 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
   from metrics_list
 where 
   1=1
-  and launch_id = 1300685197341
+  -- and launch_id = 1300685197341
   and metric_variant_name != 'off' --removed control as a metric_variant_name, but control metrics will still be there 
   group by all 
 )
-select * from all_variants order by atc desc
+select * from all_variants order by aov desc
 -- -- , off_gms AS (
 -- --   SELECT
 -- --       exp_off_key_metrics.experiment_id,
@@ -621,8 +623,6 @@ select * from all_variants order by atc desc
 -- -- --       INNER JOIN `etsy-data-warehouse-prod`.etsy_atlas.catapult_launches AS s ON a.launch_id = s.launch_id
 -- -- --     GROUP BY all
 -- -- -- )
-
-
 -----------------------------------------------------------------------------
 --EXTRAS TO ADD IN IF I CAN 
 -----------------------------------------------------------------------------
