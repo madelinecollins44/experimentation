@@ -134,6 +134,8 @@ ORDER BY
 -----------------------------------------------------------------------------
 -- METRICS HERE
 ----------------------------------------------------------------------------
+   
+ --grab all active experiments 
   WITH all_experiments as (
   SELECT
   DISTINCT l.launch_id,
@@ -155,12 +157,13 @@ WHERE _date = CURRENT_DATE()-1
   AND l.state = 1 -- Currently running
   AND delete_date IS NULL -- Remove deleted experiments
 )
-select * from all_experiments where launch_id= 1267087556836
-
-,metrics_list as (
+-- pull out desired metrics 
+, metrics_list as (
 select  
   ae.launch_id
-  , _date
+  , ae.bucketing_type
+  , _date as last_run_date
+  , ae.start_date
   , metric_variant_name
   , metric_display_name
   , metric_id
@@ -174,11 +177,13 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
   on ae.launch_id=rmd.launch_id
   and ae.last_run_date=rmd._date -- join on most recent date to get most recent data
 )
-
+-- find control + treatment metrics 
 -- , all_variants as (
   select
     launch_id
-    , _date
+    , last_run_date
+    , start_date
+    , bucketing_type
     , metric_variant_name
     , max(case when lower(metric_display_name) = 'conversion rate' then metric_value_control else null end) as control_conversion_rate
     , max(case when lower(metric_display_name) = 'conversion rate' then metric_value_treatment else null end) as conversion_rate
@@ -192,19 +197,29 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'mean visits' then p_value else null end) as pval_mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then is_significant else null end) as significance_mean_visits
 
-
     , max(case when lower(metric_display_name) = 'gms per unit' then metric_value_control else null end) as control_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then metric_value_treatment else null end) as gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then relative_change else null end)/100 as pct_change_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then p_value else null end) as pval_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then is_significant else null end) as significance_gms_per_unit
 
-
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then metric_value_control else null end) as control_mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then metric_value_treatment else null end) as mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then relative_change else null end)/100 as pct_change_mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then p_value else null end) as pval_mean_engaged_visit
-        , max(case when lower(metric_display_name) = 'mean engaged_visit' then is_significant else null end) as significance_engaged_visit
+    , max(case when lower(metric_display_name) = 'mean engaged_visit' then is_significant else null end) as significance_engaged_visit
+
+    , max(case when lower(metric_display_name) = 'bounces' then metric_value_control else null end) as control_bounces
+    , max(case when lower(metric_display_name) = 'bounces' then metric_value_treatment else null end) as bounces
+    , max(case when lower(metric_display_name) = 'bounces' then relative_change else null end)/100 as pct_change_bounces
+    , max(case when lower(metric_display_name) = 'bounces' then p_value else null end) as pval_bounces
+    , max(case when lower(metric_display_name) = 'bounces' then is_significant else null end) as significance_bounces
+
+    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then metric_value_control else null end) as control_mean_total_winsorized_gms
+    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then metric_value_treatment else null end) as mean_total_winsorized_gms
+    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then relative_change else null end)/100 as pct_mean_total_winsorized_gms
+    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then p_value else null end) as pval_mean_total_winsorized_gms
+    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then is_significant else null end) as significance_mean_total_winsorized_gms
 
     -- , max(case when lower(metric_display_name) = 'ads conversion rate' then metric_value_control else null end) as control_ads_cvr
     -- , max(case when lower(metric_display_name) = 'ads conversion rate' then metric_value_treatment else null end) as ads_cvr
@@ -214,11 +229,18 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     -- , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then metric_value_treatment else null end) as ads_acxv
     -- , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then relative_change else null end)/100 as pct_change_ads_acxv
     -- , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then p_value else null end) as pval_ads_acxv
+
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then metric_value_control else null end) as control_winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then metric_value_treatment else null end) as winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then relative_change else null end)/100 as pct_change_winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then p_value else null end) as pval_winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then is_significant else null end) as significance_winsorized_acxv
+
+    -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view') then metric_value_control else null end) as control_pct_listing_view
+    -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then metric_value_treatment else null end) as pct_listing_view
+    -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then relative_change else null end)/100 as pct_change_pct_listing_view
+    -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then p_value else null end) as pval_pct_listing_view
+    -- , max(case when lower(metric_display_name) in ('Percent with Listing View', 'Percent with listing view')  then is_significant else null end) as significance_pct_listing_view
 
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_control else null end) as control_ocb
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_treatment else null end) as ocb
@@ -226,12 +248,23 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then p_value else null end) as pval_ocb
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'then is_significant else null end) as significance_ocb
 
-
     , max(case when lower(metric_display_name) = 'total orders per unit' then metric_value_control else null end) as control_opu
     , max(case when lower(metric_display_name) = 'total orders per unit' then metric_value_treatment else null end) as opu
     , max(case when lower(metric_display_name) = 'total orders per unit' then relative_change else null end)/100 as pct_change_opu
     , max(case when lower(metric_display_name) = 'total orders per unit' then p_value else null end) as pval_opu
     , max(case when lower(metric_display_name) = 'total orders per unit' then is_significant else null end) as significance_opu
+
+    , max(case when lower(metric_display_name) = 'Percent with add to cart' then metric_value_control else null end) as control_atc
+    , max(case when lower(metric_display_name) = 'Percent with add_to_cart' then metric_value_treatment else null end) as atc
+    , max(case when lower(metric_display_name) = 'Percent with add_to_cart' then relative_change else null end)/100 as pct_change_atc
+    , max(case when lower(metric_display_name) = 'Percent with add_to_cart' then p_value else null end) as pval_atc
+    , max(case when lower(metric_display_name) = 'Percent with add_to_cart' then is_significant else null end) as significance_atc
+
+    , max(case when lower(metric_display_name) = 'Percent with checkout_start' then metric_value_control else null end) as control_checkout_start
+    , max(case when lower(metric_display_name) = 'Percent with checkout_start' then metric_value_treatment else null end) as checkout_start
+    , max(case when lower(metric_display_name) = 'Percent with checkout_start' then relative_change else null end)/100 as pct_change_checkout_start
+    , max(case when lower(metric_display_name) = 'Percent with checkout_start' then p_value else null end) as pval_checkout_start
+    , max(case when lower(metric_display_name) = 'Percent with checkout_start' then is_significant else null end) as significance_checkout_start
 
     , max(case when lower(metric_display_name) = 'winsorized aov' then metric_value_control else null end) as control_aov
     , max(case when lower(metric_display_name) = 'winsorized aov' then metric_value_treatment else null end) as aov
@@ -248,64 +281,59 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then metric_value_control else null end) as control_mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then metric_value_treatment else null end) as mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then relative_change else null end)/100 as pct_change_mean_osa_revenue
-     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue')  then is_significant else null end) as significance_mean_osa_revenue
+    , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue')  then is_significant else null end) as significance_mean_osa_revenue
+
+    , row_number() over (partition by launch_id order by max(case when lower(metric_display_name) = 'conversion rate' then p_value else null end)) AS treatment_rank
   from metrics_list
-where launch_id= 1267087556836
+where 
+  1=1
+  and metric_variant_name != 'off' --removed control as a metric_variant_name, but control metrics will still be there 
+  and launch_id = 1303095458918
   group by all 
--- )
--- select 
---     *,
---   count(metric_variant_name) over (partition by launch_id) as treatments_per_experiment,
---   ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) as stat_sign_thresold,
---   --conversion rate metrics
---         CASE
---           WHEN pval_conversion_rate <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
---           ELSE 0
---         END AS significant_cr_change,
---               CASE
---           WHEN pval_conversion_rate <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
---                 and pct_change_conversion_rate > 0 THEN 1
---           ELSE 0
---         END AS positive_significant_cr_change,
---   -- mean visits
---         CASE
---         WHEN pval_mean_visits <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
---         ELSE 0
---       END AS significant_cr_change,
---             CASE
---         WHEN pval_mean_visits <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
---               and pct_change_mean_visits > 0 THEN 1
---         ELSE 0
---       END AS positive_significant_mean_visits_change,
---   --gms_per_unit
---       CASE
---         WHEN pval_gms_per_unit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
---         ELSE 0
---       END AS significant_gms_per_unit_change,
---             CASE
---         WHEN pval_gms_per_unit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
---               and pct_change_gms_per_unit > 0 THEN 1
---         ELSE 0
---       END AS positive_significant_gms_per_unit_change,
---   -- engaged_visit
---       CASE
---         WHEN pval_mean_engaged_visit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
---         ELSE 0
---       END AS significant_mean_engaged_visit_change,
---             CASE
---         WHEN pval_mean_engaged_visit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
---               and pct_change_mean_engaged_visit > 0 THEN 1
---         ELSE 0
---       END AS positive_significant_mean_engaged_visit_change
---   from all_variants
--- where launch_id= 1267087556836
-  --winsorized_acxv
-  --ocb
-  --opu
-  --aov
-  --prolist_spend
-  --osa_revenue
-  -- )
+)
+, off_gms AS (
+  SELECT
+      exp_off_key_metrics.experiment_id,
+      exp_off_key_metrics.off_gms,
+      exp_off_key_metrics.off_prolist_spend * exp_off_key_metrics.off_browsers / 100 AS off_prolist_spend
+    FROM
+      `etsy-data-warehouse-prod`.catapult.exp_off_key_metrics
+    WHERE exp_off_key_metrics.segmentation = 'any'
+     AND exp_off_key_metrics.run_date IN (
+      SELECT
+          max(exp_on_key_metrics_1.run_date)
+        FROM
+          `etsy-data-warehouse-prod`.catapult.exp_on_key_metrics AS exp_on_key_metrics_1)
+  ORDER BY
+    1
+)
+, exp_summary AS (
+  SELECT
+      -- a.experiment_id,
+      a.launch_id,
+      s.team,
+      s.name,
+      s.initiative,
+      a.bucketing_type,
+      count(distinct a.metric_variant_name) as treatments_per_experiment,
+      --s.enabling_teams,
+      s.launch_group as group_name,
+      s.outcome,
+      s.hypothesis,
+      s.launch_percentage,
+      a.start_date,
+      a.last_run_date,
+      date_diff(a.last_run_date, a.start_date, DAY) + 1 AS days_running,
+      o.off_gms,
+      o.off_prolist_spend,
+      
+    FROM
+      all_variants
+       AS a
+      LEFT JOIN off_gms AS o ON a.experiment_id = o.experiment_id
+      INNER JOIN `etsy-data-warehouse-prod`.etsy_atlas.catapult_launches AS s ON a.launch_id = s.launch_id
+    GROUP BY all
+)
 
 
 -----------------------------------------------------------------------------
