@@ -134,8 +134,7 @@ ORDER BY
 -----------------------------------------------------------------------------
 -- METRICS HERE
 ----------------------------------------------------------------------------
-
-   WITH all_experiments as (
+  WITH all_experiments as (
   SELECT
   DISTINCT l.launch_id,
   date(boundary_start_ts) AS start_date,
@@ -156,6 +155,8 @@ WHERE _date = CURRENT_DATE()-1
   AND l.state = 1 -- Currently running
   AND delete_date IS NULL -- Remove deleted experiments
 )
+select * from all_experiments where launch_id= 1267087556836
+
 ,metrics_list as (
 select  
   ae.launch_id
@@ -166,13 +167,15 @@ select
   , metric_value_control
   , metric_value_treatment
   , relative_change
+  , is_significant
   , p_value
 from all_experiments ae
 inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
   on ae.launch_id=rmd.launch_id
   and ae.last_run_date=rmd._date -- join on most recent date to get most recent data
 )
-, all_variants as (
+
+-- , all_variants as (
   select
     launch_id
     , _date
@@ -181,18 +184,28 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'conversion rate' then metric_value_treatment else null end) as conversion_rate
     , max(case when lower(metric_display_name) = 'conversion rate' then relative_change else null end)/100 as pct_change_conversion_rate
     , max(case when lower(metric_display_name) = 'conversion rate' then p_value else null end) as pval_conversion_rate
+    , max(case when lower(metric_display_name) = 'conversion rate' then is_significant else null end) as significance_conversion_rate
+
     , max(case when lower(metric_display_name) = 'mean visits' then metric_value_control else null end) as control_mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then metric_value_treatment else null end) as mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then relative_change else null end)/100 as pct_change_mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then p_value else null end) as pval_mean_visits
+    , max(case when lower(metric_display_name) = 'mean visits' then is_significant else null end) as significance_mean_visits
+
+
     , max(case when lower(metric_display_name) = 'gms per unit' then metric_value_control else null end) as control_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then metric_value_treatment else null end) as gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then relative_change else null end)/100 as pct_change_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' then p_value else null end) as pval_gms_per_unit
+    , max(case when lower(metric_display_name) = 'gms per unit' then is_significant else null end) as significance_gms_per_unit
+
+
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then metric_value_control else null end) as control_mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then metric_value_treatment else null end) as mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then relative_change else null end)/100 as pct_change_mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then p_value else null end) as pval_mean_engaged_visit
+        , max(case when lower(metric_display_name) = 'mean engaged_visit' then is_significant else null end) as significance_engaged_visit
+
     -- , max(case when lower(metric_display_name) = 'ads conversion rate' then metric_value_control else null end) as control_ads_cvr
     -- , max(case when lower(metric_display_name) = 'ads conversion rate' then metric_value_treatment else null end) as ads_cvr
     -- , max(case when lower(metric_display_name) = 'ads conversion rate' then relative_change else null end)/100 as pct_change_ads_cvr
@@ -205,63 +218,94 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then metric_value_treatment else null end) as winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then relative_change else null end)/100 as pct_change_winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then p_value else null end) as pval_winsorized_acxv
+    , max(case when lower(metric_display_name) = 'winsorized ac*v' then is_significant else null end) as significance_winsorized_acxv
+
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_control else null end) as control_ocb
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then metric_value_treatment else null end) as ocb
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then relative_change else null end)/100 as pct_change_ocb
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)' then p_value else null end) as pval_ocb
+    , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'then is_significant else null end) as significance_ocb
+
+
     , max(case when lower(metric_display_name) = 'total orders per unit' then metric_value_control else null end) as control_opu
     , max(case when lower(metric_display_name) = 'total orders per unit' then metric_value_treatment else null end) as opu
     , max(case when lower(metric_display_name) = 'total orders per unit' then relative_change else null end)/100 as pct_change_opu
     , max(case when lower(metric_display_name) = 'total orders per unit' then p_value else null end) as pval_opu
+    , max(case when lower(metric_display_name) = 'total orders per unit' then is_significant else null end) as significance_opu
+
     , max(case when lower(metric_display_name) = 'winsorized aov' then metric_value_control else null end) as control_aov
     , max(case when lower(metric_display_name) = 'winsorized aov' then metric_value_treatment else null end) as aov
     , max(case when lower(metric_display_name) = 'winsorized aov' then relative_change else null end)/100 as pct_change_aov
     , max(case when lower(metric_display_name) = 'winsorized aov' then p_value else null end) as pval_aov  
+    , max(case when lower(metric_display_name) = 'winsorized aov' then is_significant else null end) as significance_aov
+
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then metric_value_control else null end) as control_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then metric_value_treatment else null end) as mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then relative_change else null end)/100 as pct_change_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then p_value else null end) as pval_mean_prolist_spend
+    , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then is_significant else null end) as significance_mean_prolist_spend
+
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then metric_value_control else null end) as control_mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then metric_value_treatment else null end) as mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then relative_change else null end)/100 as pct_change_mean_osa_revenue
+     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue')  then is_significant else null end) as significance_mean_osa_revenue
   from metrics_list
+where launch_id= 1267087556836
   group by all 
-)
-select 
-    *,
-  count(metric_variant_name) over (partition by launch_id) as treatments_per_experiment,
-  ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) as stat_sign_thresold,
-  --conversion rate metrics
-        CASE
-          WHEN pval_conversion_rate <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
-          ELSE 0
-        END AS significant_cr_change,
-              CASE
-          WHEN pval_conversion_rate <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
-                and pct_change_conversion_rate > 0 THEN 1
-          ELSE 0
-        END AS positive_significant_cr_change,
-  -- mean visits
-        CASE
-        WHEN pval_mean_visits <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
-        ELSE 0
-      END AS significant_cr_change,
-            CASE
-        WHEN pval_mean_visits <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
-              and pct_change_mean_visits > 0 THEN 1
-        ELSE 0
-      END AS positive_significant_mean_visits_change,
-  --gms_per_unit
-
-      CASE
-        WHEN pval_gms_per_unit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
-        ELSE 0
-      END AS significant_gms_per_unit_change,
-            CASE
-        WHEN pval_gms_per_unit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
-              and pct_change_gms_per_unit > 0 THEN 1
-        ELSE 0
-      END AS positive_significant_gms_per_unit_change,
+-- )
+-- select 
+--     *,
+--   count(metric_variant_name) over (partition by launch_id) as treatments_per_experiment,
+--   ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) as stat_sign_thresold,
+--   --conversion rate metrics
+--         CASE
+--           WHEN pval_conversion_rate <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
+--           ELSE 0
+--         END AS significant_cr_change,
+--               CASE
+--           WHEN pval_conversion_rate <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
+--                 and pct_change_conversion_rate > 0 THEN 1
+--           ELSE 0
+--         END AS positive_significant_cr_change,
+--   -- mean visits
+--         CASE
+--         WHEN pval_mean_visits <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
+--         ELSE 0
+--       END AS significant_cr_change,
+--             CASE
+--         WHEN pval_mean_visits <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
+--               and pct_change_mean_visits > 0 THEN 1
+--         ELSE 0
+--       END AS positive_significant_mean_visits_change,
+--   --gms_per_unit
+--       CASE
+--         WHEN pval_gms_per_unit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
+--         ELSE 0
+--       END AS significant_gms_per_unit_change,
+--             CASE
+--         WHEN pval_gms_per_unit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
+--               and pct_change_gms_per_unit > 0 THEN 1
+--         ELSE 0
+--       END AS positive_significant_gms_per_unit_change,
+--   -- engaged_visit
+--       CASE
+--         WHEN pval_mean_engaged_visit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id))) THEN 1
+--         ELSE 0
+--       END AS significant_mean_engaged_visit_change,
+--             CASE
+--         WHEN pval_mean_engaged_visit <= ((NUMERIC '0.05')/ (count(metric_variant_name) over (partition by launch_id)))
+--               and pct_change_mean_engaged_visit > 0 THEN 1
+--         ELSE 0
+--       END AS positive_significant_mean_engaged_visit_change
+--   from all_variants
+-- where launch_id= 1267087556836
+  --winsorized_acxv
+  --ocb
+  --opu
+  --aov
+  --prolist_spend
+  --osa_revenue
+  -- )
 
 
 -----------------------------------------------------------------------------
