@@ -1,4 +1,4 @@
- 
+ create or replace table etsy-data-warehouse-dev.madelinecollins.active_experiment_summary as (
  --grab all active experiments 
   WITH all_experiments as (
   SELECT
@@ -616,3 +616,4 @@ from exp_summary es
 left join plats_agg pa using (launch_id)
 -- left join experiment_pages_ran_on ep
 --   on pa.launch_id=ep.launch_id
+ );
