@@ -134,7 +134,7 @@ ORDER BY
 -----------------------------------------------------------------------------
 -- METRICS HERE
 ----------------------------------------------------------------------------
- 
+  
  --grab all active experiments 
   WITH all_experiments as (
   SELECT
@@ -193,6 +193,7 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'conversion rate' then is_significant else null end) as significance_conversion_rate
     , max(case when lower(metric_display_name) = 'conversion rate' and relative_change > 0 then is_significant else null end) as positive_significance_conversion_rate
 
+--visit frequency
     , max(case when lower(metric_display_name) = 'mean visits' then metric_value_control else null end) as control_mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then metric_value_treatment else null end) as mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then relative_change else null end)/100 as pct_change_mean_visits
@@ -207,7 +208,12 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'gms per unit' then is_significant else null end) as significance_gms_per_unit
     , max(case when lower(metric_display_name) = 'gms per unit' and relative_change > 0 then is_significant else null end) as positive_significance_gms_per_unit
 
---visit frequency
+    , max(case when lower(metric_display_name) = 'percent with error page view' then metric_value_control else null end) as control_percent_error_pg_view
+    , max(case when lower(metric_display_name) = 'percent with error page view' then relative_change else null end)/100 as pct_change_percent_error_pg_view
+    , max(case when lower(metric_display_name) = 'percent with error page view' then p_value else null end) as pval_percent_error_pg_view
+    , max(case when lower(metric_display_name) = 'percent with error page view' then is_significant else null end) as significance_percent_error_pg_view
+    , max(case when lower(metric_display_name) = 'percent with error page view' and relative_change > 0 then is_significant else null end) as positive_significance_percent_error_pg_view
+
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then metric_value_control else null end) as control_mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then metric_value_treatment else null end) as mean_engaged_visit
     , max(case when lower(metric_display_name) = 'mean engaged_visit' then relative_change else null end)/100 as pct_change_mean_engaged_visit
@@ -222,21 +228,26 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'bounces' then is_significant else null end) as significance_bounces
     , max(case when lower(metric_display_name)= 'bounces' and relative_change > 0 then is_significant else null end) as positive_significance_bounces
 
-    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then metric_value_control else null end) as control_mean_total_winsorized_gms
-    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then metric_value_treatment else null end) as mean_total_winsorized_gms
-    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then relative_change else null end)/100 as pct_mean_total_winsorized_gms
-    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then p_value else null end) as pval_mean_total_winsorized_gms
-    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then is_significant else null end) as significance_mean_total_winsorized_gms
-    , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' and relative_change > 0 then is_significant else null end) as positive_significance_mean_total_winsorized_gms
+    -- , max(case when metric_display_name) = 'Mean total_winsorized_gms' then metric_value_control else null end) as control_mean_total_winsorized_gms
+    -- , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then metric_value_treatment else null end) as mean_total_winsorized_gms
+    -- , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then relative_change else null end)/100 as pct_mean_total_winsorized_gms
+    -- , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then p_value else null end) as pval_mean_total_winsorized_gms
+    -- , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' then is_significant else null end) as significance_mean_total_winsorized_gms
+    -- , max(case when lower(metric_display_name) = 'Mean total_winsorized_gms' and relative_change > 0 then is_significant else null end) as positive_significance_mean_total_winsorized_gms
 
-    -- , max(case when lower(metric_display_name) = 'ads conversion rate' then metric_value_control else null end) as control_ads_cvr
-    -- , max(case when lower(metric_display_name) = 'ads conversion rate' then metric_value_treatment else null end) as ads_cvr
-    -- , max(case when lower(metric_display_name) = 'ads conversion rate' then relative_change else null end)/100 as pct_change_ads_cvr
-    -- , max(case when lower(metric_display_name) = 'ads conversion rate' then p_value else null end) as pval_ads_cvr
-    -- , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then metric_value_control else null end) as control_ads_acxv
-    -- , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then metric_value_treatment else null end) as ads_acxv
-    -- , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then relative_change else null end)/100 as pct_change_ads_acxv
-    -- , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then p_value else null end) as pval_ads_acxv
+    , max(case when lower(metric_display_name) = 'ads conversion rate' then metric_value_control else null end) as control_ads_cvr
+    , max(case when lower(metric_display_name) = 'ads conversion rate' then metric_value_treatment else null end) as ads_cvr
+    , max(case when lower(metric_display_name) = 'ads conversion rate' then relative_change else null end)/100 as pct_change_ads_cvr
+    , max(case when lower(metric_display_name) = 'ads conversion rate' then p_value else null end) as pval_ads_cvr
+    , max(case when lower(metric_display_name) = 'ads conversion rate' then is_significant else null end) as significance_ads_cvr
+    , max(case when lower(metric_display_name) = 'ads conversion rate'  and relative_change > 0 then is_significant else null end) as positive_significance_ads_cvr
+
+    , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then metric_value_control else null end) as control_ads_acxv
+    , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then metric_value_treatment else null end) as ads_acxv
+    , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then relative_change else null end)/100 as pct_change_ads_acxv
+    , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then p_value else null end) as pval_ads_acxv
+    , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)' then is_significant else null end) as significance_ads_acxv
+    , max(case when lower(metric_display_name) = 'ads winsorized acvv ($100)'  and relative_change > 0 then is_significant else null end) as positive_significance_ads_acxv
 
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then metric_value_control else null end) as control_winsorized_acxv
     , max(case when lower(metric_display_name) = 'winsorized ac*v' then metric_value_treatment else null end) as winsorized_acxv
@@ -259,13 +270,12 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) = 'orders per converting browser (ocb)'  and relative_change > 0 then is_significant else null end) as positive_significance_ocb
 
 --purchase frequency
-----total orders per unit is deprecated
     , max(case when metric_display_name = 'Orders per Unit' then metric_value_control else null end) as control_opu
     , max(case when metric_display_name = 'Orders per Unit' then metric_value_treatment else null end) as opu
-    , max(case when metric_display_name = 'Orders per Unit'  then relative_change else null end)/100 as pct_change_opu
-    , max(case when metric_display_name = 'Orders per Unit' then p_value else null end) as pval_opu
-    , max(case when metric_display_name = 'Orders per Unit'  then is_significant else null end) as significance_opu
-    , max(case when metric_display_name = 'Orders per Unit' and relative_change > 0 then is_significant else null end) as positive_significance_opu
+    , max(case when lower(metric_display_name) = 'total orders per unit'  then relative_change else null end)/100 as pct_change_opu
+    , max(case when lower(metric_display_name) = 'total orders per unit'  then p_value else null end) as pval_opu
+    , max(case when lower(metric_display_name) = 'total orders per unit'  then is_significant else null end) as significance_opu
+    , max(case when lower(metric_display_name) = 'total orders per unit' and relative_change > 0 then is_significant else null end) as positive_significance_opu
 
     , max(case when lower(metric_display_name) = 'percent with add to cart' then metric_value_control else null end) as control_atc
     , max(case when lower(metric_display_name) = 'percent with add to cart' then metric_value_treatment else null end) as atc
@@ -293,12 +303,12 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then relative_change else null end)/100 as pct_change_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then p_value else null end) as pval_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then is_significant else null end) as significance_mean_prolist_spend
-    , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') and relative_change > 0 then is_significant else null end) as positive_significance_aov
+    , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') and relative_change > 0 then is_significant else null end) as positive_significance_mean_prolist_spend
 
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then metric_value_control else null end) as control_mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then metric_value_treatment else null end) as mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') then relative_change else null end)/100 as pct_change_mean_osa_revenue
-        , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue')  then p_value else null end) as pval_mean_osa_revenue
+    , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue')  then p_value else null end) as pval_mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue')  then is_significant else null end) as significance_mean_osa_revenue
     , max(case when lower(metric_display_name) in ('offsite ads attributed revenue','mean offsite_ads_one_day_attributed_revenue') and relative_change > 0 then is_significant else null end) as positive_significance_mean_osa_revenue
     , row_number() over (partition by launch_id order by max(case when lower(metric_display_name) = 'conversion rate' then p_value else null end)) AS treatment_rank
@@ -309,320 +319,378 @@ where
   and metric_variant_name != 'off' --removed control as a metric_variant_name, but control metrics will still be there 
   group by all 
 )
-select * from all_variants order by aov desc
--- -- , off_gms AS (
--- --   SELECT
--- --       exp_off_key_metrics.experiment_id,
--- --       exp_off_key_metrics.off_gms,
--- --       exp_off_key_metrics.off_prolist_spend * exp_off_key_metrics.off_browsers / 100 AS off_prolist_spend
--- --     FROM
--- --       `etsy-data-warehouse-prod`.catapult.exp_off_key_metrics
--- --     WHERE exp_off_key_metrics.segmentation = 'any'
--- --      AND exp_off_key_metrics.run_date IN (
--- --       SELECT
--- --           max(exp_on_key_metrics_1.run_date)
--- --         FROM
--- --           `etsy-data-warehouse-prod`.catapult.exp_on_key_metrics AS exp_on_key_metrics_1)
--- --   ORDER BY
--- --     1
--- -- )
--- -- , exp_summary AS (
--- --   SELECT
--- --       -- a.experiment_id,
--- --       a.launch_id,
--- --       s.team,
--- --       s.name,
--- --       s.initiative,
--- --       a.bucketing_type,
--- --       count(distinct a.metric_variant_name) as treatments_per_experiment,
--- --       --s.enabling_teams,
--- --       s.launch_group as group_name,
--- --       s.outcome,
--- --       s.hypothesis,
--- --       s.launch_percentage,
--- --       a.start_date,
--- --       a.last_run_date,
--- --       date_diff(a.last_run_date, a.start_date, DAY) + 1 AS days_running,
--- --       o.off_gms,
--- --       o.off_prolist_spend,
--- --             sig changes
--- --       max(a.significance_conversion_rate) AS significance_conversion_rate,
--- --       max(a.significance_mean_visits) AS significance_mean_visits,
--- --       max(a.significance_gms_per_unit) AS significance_gms_per_unit,
--- --       max(a.significance_engaged_visit) AS significance_engaged_visit,
--- --       max(a.significance_bounces) AS significance_bounces,
--- --       max(a.significance_mean_total_winsorized_gms) AS significance_mean_total_winsorized_gms,
--- --       max(a.significance_winsorized_acxv) AS significance_winsorized_acxv,
--- --       max(a.significance_ocb) AS significance_ocb,
--- --       max(a.significance_opu) AS significance_opu,
--- --       max(a.significance_atc) AS significance_atc,
--- --       max(a.significance_checkout_start) AS significance_checkout_start,
--- --       max(a.significance_aov) AS significance_aov,
--- --       max(a.significance_mean_prolist_spend) AS significance_mean_prolist_spend,
--- --       max(a.significance_mean_osa_revenue) AS significance_mean_osa_revenue,
--- --       -- positive changes
--- --       max(a.positive_significance_conversion_rate) AS positive_significance_conversion_rate,
--- --       max(a.positive_significance_mean_visits) AS positive_significance_mean_visits,
--- --       max(a.positive_significance_gms_per_unit) AS positive_significance_gms_per_unit,
--- --       max(a.positive_significance_engaged_visit) AS positive_significance_engaged_visit,
--- --       max(a.positive_significance_bounces) AS positive_significance_bounces,
--- --       max(a.positive_significance_mean_total_winsorized_gms) AS positive_significance_mean_total_winsorized_gms,
--- --       max(a.positive_significance_winsorized_acxv) AS positive_significance_winsorized_acxv,
--- --       max(a.positive_significance_ocb) AS positive_significance_ocb,
--- --       max(a.positive_significance_opu) AS positive_significance_opu,
--- --       max(a.positive_significance_atc) AS positive_significance_atc,
--- --       max(a.positive_significance_checkout_start) AS positive_significance_checkout_start,
--- --       max(a.positive_significance_aov) AS positive_significance_aov,
--- --       max(a.positive_significance_aov) AS positive_significance_aov,
--- --       max(a.positive_significance_mean_osa_revenue) AS positive_significance_mean_osa_revenue,
--- --      --cr
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_conversion_rate
--- --       END) AS cr_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_conversion_rate
--- --       END) AS cr_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_conversion_rate
--- --       END) AS cr_change_2,
--- --             max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_conversion_rate
--- --       END) AS cr_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_conversion_rate
--- --       END) AS cr_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_conversion_rate
--- --       END) AS cr_p_value_3,
--- --       --acvv
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_winsorized_acxv
--- --       END) AS winsorized_acxv_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_winsorized_acxv
--- --       END) AS pval_winsorized_acxv_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_winsorized_acxv
--- --       END) AS winsorized_acxv_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_winsorized_acxv
--- --       END) AS winsorized_acxv_change_3,
--- --      --prolist
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_mean_prolist_spend
--- --       END) AS mean_prolist_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_mean_prolist_spend
--- --       END) AS mean_prolist_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_mean_prolist_spend
--- --       END) AS mean_prolist_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_mean_prolist_spend
--- --       END) AS prolist_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_mean_prolist_spend
--- --       END) AS prolist_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_mean_prolist_spend
--- --       END) AS prolist_p_value_3,
--- --    --atc
--- --          max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_atc
--- --       END) AS atc_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_atc
--- --       END) AS atc_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_atc
--- --       END) AS atc_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_atc
--- --       END) AS atc_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_atc
--- --       END) AS atc_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_atc
--- --       END) AS atc_p_value_3,
--- -- --checkout start metrics
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_checkout_start
--- --       END) AS checkout_start_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_checkout_start
--- --       END) AS checkout_start_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_checkout_start
--- --       END) AS checkout_start_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_checkout_start
--- --       END) AS checkout_start_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_checkout_start
--- --       END) AS checkout_start_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_checkout_start
--- --       END) AS checkout_start_p_value_3,
--- -- --visit frequency metrics
--- --     max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_mean_visits
--- --       END) AS visit_freq_p_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_mean_visits
--- --       END) AS visit_freq_p_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_mean_visits
--- --       END) AS visit_freq_p_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_mean_visits
--- --       END) AS visit_freq_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_mean_visits
--- --       END) AS visit_freq_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_mean_visits
--- --       END) AS visit_freq_p_value_3,
--- -- -- osa revenue metrics
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_mean_osa_revenue
--- --       END) AS osa_revenue_attribution_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_mean_osa_revenue
--- --       END) AS osa_revenue_attribution_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_mean_osa_revenue
--- --       END) AS osa_revenue_attribution_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_mean_osa_revenue
--- --       END) AS osa_revenue_attribution_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_mean_osa_revenue
--- --       END) AS osa_revenue_attribution_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_mean_osa_revenue
--- --       END) AS osa_revenue_attribution_p_value_3,
--- -- --ocb page metrics
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_ocb
--- --       END) AS ocb_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_ocb
--- --       END) AS ocb_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_ocb
--- --       END) AS ocb_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_ocb
--- --       END) AS ocb_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_ocb
--- --       END) AS ocb_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_ocb
--- --       END) AS ocb_p_value_3,
--- -- --aov metrics
--- --      max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_aov
--- --       END) AS winsorized_aov_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_aov
--- --       END) AS winsorized_aov_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_aov
--- --       END) AS winsorized_aov_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_aov
--- --       END) AS winsorized_aov_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_aov
--- --       END) AS winsorized_aov_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_aov
--- --       END) AS winsorized_aov_p_value_3,
--- -- --engaged metrics
--- --   max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_mean_engaged_visit
--- --       END) AS engaged_visits_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_mean_engaged_visit
--- --       END) AS engaged_visits_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_mean_engaged_visit
--- --       END) AS engaged_visits_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_mean_engaged_visit
--- --       END) AS engaged_visits_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_mean_engaged_visit
--- --       END) AS engaged_visits_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_mean_engaged_visit
--- --       END) AS engaged_visits_p_value_3,
--- -- -- bounce metrics
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_bounces
--- --       END) AS bounces_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_bounces
--- --       END) AS bounces_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_bounces
--- --       END) AS bounces_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_bounces
--- --       END) AS bounces_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_bounces
--- --       END) AS bounces_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_bounces
--- --       END) AS bounces_p_value_3,
--- -- --total orders per browser orders metrics
--- --        max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_ocb
--- --       END) AS total_orders_per_browser_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_ocb
--- --       END) AS total_orders_per_browser_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_ocb
--- --       END) AS total_orders_per_browser_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_ocb
--- --       END) AS total_orders_per_browser_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_ocb
--- --       END) AS total_orders_per_browser_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_ocb
--- --       END) AS total_orders_per_browser_p_value_3,
--- -- --purchase frequency metrics
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pct_change_opu
--- --       END) AS purchase_freq_change_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pct_change_opu
--- --       END) AS purchase_freq_change_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pct_change_opu
--- --       END) AS purchase_freq_change_3,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 1 THEN a.pval_opu
--- --       END) AS purchase_freq_p_value_1,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 2 THEN a.pval_opu
--- --       END) AS purchase_freq_p_value_2,
--- --       max(CASE
--- --         WHEN a.treatment_rank = 3 THEN a.pval_opu
--- --       END) AS purchase_freq_p_value_3
--- -- --     FROM
--- -- --       all_variants
--- -- --        AS a
--- -- --       LEFT JOIN off_gms AS o ON a.experiment_id = o.experiment_id
--- -- --       INNER JOIN `etsy-data-warehouse-prod`.etsy_atlas.catapult_launches AS s ON a.launch_id = s.launch_id
--- -- --     GROUP BY all
--- -- -- )
+, off_gms AS (
+  SELECT
+      exp_off_key_metrics.experiment_id,
+      exp_off_key_metrics.off_gms,
+      exp_off_key_metrics.off_prolist_spend * exp_off_key_metrics.off_browsers / 100 AS off_prolist_spend
+    FROM
+      `etsy-data-warehouse-prod`.catapult.exp_off_key_metrics
+    WHERE exp_off_key_metrics.segmentation = 'any'
+     AND exp_off_key_metrics.run_date IN (
+      SELECT
+          max(exp_on_key_metrics_1.run_date)
+        FROM
+          `etsy-data-warehouse-prod`.catapult.exp_on_key_metrics AS exp_on_key_metrics_1)
+  ORDER BY
+    1
+)
+-- , exp_summary AS (
+  SELECT
+      -- a.experiment_id,
+      a.launch_id,
+      s.team,
+      s.name,
+      s.initiative,
+      a.bucketing_type,
+      count(distinct a.metric_variant_name) as treatments_per_experiment,
+      --s.enabling_teams,
+      s.launch_group as group_name,
+      s.outcome,
+      s.hypothesis,
+      s.launch_percentage,
+      a.start_date,
+      a.last_run_date,
+      date_diff(a.last_run_date, a.start_date, DAY) + 1 AS days_running,
+      o.off_gms,
+      o.off_prolist_spend,
+      ----sig changes
+      max(a.significance_conversion_rate) AS significance_conversion_rate,
+      max(a.significance_mean_visits) AS significance_mean_visits,
+      max(a.significance_gms_per_unit) AS significance_gms_per_unit,
+      max(a.significance_percent_error_pg_view) AS significance_percent_error_pg_view,
+      max(a.significance_engaged_visit) AS significance_engaged_visit,
+      max(a.significance_bounces) AS significance_bounces,
+      max(a.significance_ads_cvr) AS significance_ads_cvr,
+      max(a.significance_winsorized_acxv) AS significance_winsorized_acxv,
+      max(a.significance_ocb) AS significance_ocb,
+      max(a.significance_opu) AS significance_opu,
+      max(a.significance_atc) AS significance_atc,
+      max(a.significance_checkout_start) AS significance_checkout_start,
+      max(a.significance_aov) AS significance_aov,
+      max(a.significance_mean_prolist_spend) AS significance_mean_prolist_spend,
+      max(a.significance_mean_osa_revenue) AS significance_mean_osa_revenue,
+      --- positive changes
+      max(a.positive_significance_conversion_rate) AS positive_significance_conversion_rate,
+      max(a.positive_significance_mean_visits) AS positive_significance_mean_visits,
+      max(a.positive_significance_gms_per_unit) AS positive_significance_gms_per_unit,
+      max(a.positive_significance_percent_error_pg_view) AS positive_significance_percent_error_pg_view,
+      max(a.positive_significance_engaged_visit) AS positive_significance_engaged_visit,
+      max(a.positive_significance_bounces) AS positive_significance_bounces,
+      max(a.positive_significance_ads_cvr) AS positive_significance_ads_cvr,
+      max(a.positive_significance_winsorized_acxv) AS positive_significance_winsorized_acxv,
+      max(a.positive_significance_ocb) AS positive_significance_ocb,
+      max(a.positive_significance_opu) AS positive_significance_opu,
+      max(a.positive_significance_atc) AS positive_significance_atc,
+      max(a.positive_significance_checkout_start) AS positive_significance_checkout_start,
+      max(a.positive_significance_aov) AS positive_significance_aov,
+      max(a.positive_significance_mean_prolist_spend) AS positive_significance_mean_prolist_spend,
+      max(a.positive_significance_mean_osa_revenue) AS positive_significance_mean_osa_revenue,
+     --cr
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_conversion_rate
+      END) AS cr_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_conversion_rate
+      END) AS cr_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_conversion_rate
+      END) AS cr_change_2,
+            max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_conversion_rate
+      END) AS cr_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_conversion_rate
+      END) AS cr_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_conversion_rate
+      END) AS cr_p_value_3,
+    --visit frequency metrics
+    max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_mean_visits
+      END) AS visit_freq_p_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_mean_visits
+      END) AS visit_freq_p_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_mean_visits
+      END) AS visit_freq_p_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_mean_visits
+      END) AS visit_freq_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_mean_visits
+      END) AS visit_freq_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_mean_visits
+      END) AS visit_freq_p_value_3,
+      --gms per unit metrics
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_gms_per_unit
+      END) AS gms_per_unit_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_gms_per_unit
+      END) AS gms_per_unit_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_gms_per_unit
+      END) AS gms_per_unit_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_gms_per_unit
+      END) AS gms_per_unit_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_gms_per_unit
+      END) AS gms_per_unit_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_gms_per_unit
+      END) AS gms_per_unit_p_value_3,
+  -- error page
+        max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_percent_error_pg_view
+      END) AS error_pg_view_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_percent_error_pg_view
+      END) AS error_pg_view_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_percent_error_pg_view
+      END) AS error_pg_view_change_2,
+            max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_percent_error_pg_view
+      END) AS error_pg_view_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_percent_error_pg_view
+      END) AS error_pg_view_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_percent_error_pg_view
+      END) AS error_pg_view_p_value_3,
+  -- enaged visits
+  max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_mean_engaged_visit
+      END) AS engaged_visits_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_mean_engaged_visit
+      END) AS engaged_visits_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_mean_engaged_visit
+      END) AS engaged_visits_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_mean_engaged_visit
+      END) AS engaged_visits_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_mean_engaged_visit
+      END) AS engaged_visits_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_mean_engaged_visit
+      END) AS engaged_visits_p_value_3,
+  -- bounces
+   max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_bounces
+      END) AS bounces_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_bounces
+      END) AS bounces_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_bounces
+      END) AS bounces_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_bounces
+      END) AS bounces_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_bounces
+      END) AS bounces_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_bounces
+      END) AS bounces_p_value_3,
+  -- ads cr
+    max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_ads_cvr
+      END) AS ads_cvr_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_ads_cvr
+      END) AS ads_cvr_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_ads_cvr
+      END) AS ads_cvr_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_ads_cvr
+      END) AS ads_cvr_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_ads_cvr
+      END) AS ads_cvr_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_ads_cvr
+      END) AS ads_cvr_p_value_3,
+  -- ads acvv
+    max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_ads_acxv
+      END) AS ads_acxv_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_ads_acxv
+      END) AS ads_acxv_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_ads_acxv
+      END) AS ads_acxv_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_ads_acxv
+      END) AS ads_acxv_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_ads_acxv
+      END) AS ads_acxv_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_ads_acxv
+      END) AS ads_acxv_p_value_3,
+  -- wins acbv
+        max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_winsorized_acxv
+      END) AS winsorized_acxv_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_winsorized_acxv
+      END) AS pval_winsorized_acxv_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_winsorized_acxv
+      END) AS winsorized_acxv_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_winsorized_acxv
+      END) AS winsorized_acxv_change_3,
+  --ocb
+   max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_ocb
+      END) AS ocb_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_ocb
+      END) AS ocb_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_ocb
+      END) AS ocb_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_ocb
+      END) AS ocb_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_ocb
+      END) AS ocb_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_ocb
+      END) AS ocb_p_value_3,
+  --opu
+  max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_opu
+      END) AS purchase_freq_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_opu
+      END) AS purchase_freq_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_opu
+      END) AS purchase_freq_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_opu
+      END) AS purchase_freq_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_opu
+      END) AS purchase_freq_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_opu
+      END) AS purchase_freq_p_value_3,
+  --atc
+   max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_atc
+      END) AS atc_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_atc
+      END) AS atc_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_atc
+      END) AS atc_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_atc
+      END) AS atc_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_atc
+      END) AS atc_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_atc
+      END) AS atc_p_value_3,
+  --checkout
+  max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_checkout_start
+      END) AS checkout_start_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_checkout_start
+      END) AS checkout_start_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_checkout_start
+      END) AS checkout_start_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_checkout_start
+      END) AS checkout_start_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_checkout_start
+      END) AS checkout_start_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_checkout_start
+      END) AS checkout_start_p_value_3,
+  --aov
+  max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_aov
+      END) AS winsorized_aov_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_aov
+      END) AS winsorized_aov_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_aov
+      END) AS winsorized_aov_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_aov
+      END) AS winsorized_aov_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_aov
+      END) AS winsorized_aov_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_aov
+      END) AS winsorized_aov_p_value_3,
+  --prolist
+        max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_mean_prolist_spend
+      END) AS mean_prolist_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_mean_prolist_spend
+      END) AS mean_prolist_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_mean_prolist_spend
+      END) AS mean_prolist_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_mean_prolist_spend
+      END) AS prolist_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_mean_prolist_spend
+      END) AS prolist_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_mean_prolist_spend
+      END) AS prolist_p_value_3,
+  --osa 
+   max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_mean_osa_revenue
+      END) AS osa_revenue_attribution_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_mean_osa_revenue
+      END) AS osa_revenue_attribution_change_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_mean_osa_revenue
+      END) AS osa_revenue_attribution_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_mean_osa_revenue
+      END) AS osa_revenue_attribution_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_mean_osa_revenue
+      END) AS osa_revenue_attribution_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_mean_osa_revenue
+      END) AS osa_revenue_attribution_p_value_3
+    FROM
+      all_variants
+       AS a
+      LEFT JOIN off_gms AS o ON a.launch_id = o.experiment_id
+      INNER JOIN `etsy-data-warehouse-prod`.etsy_atlas.catapult_launches AS s ON a.launch_id = s.launch_id
+    GROUP BY all
+-- )
 -----------------------------------------------------------------------------
 --EXTRAS TO ADD IN IF I CAN 
 -----------------------------------------------------------------------------
