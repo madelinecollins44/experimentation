@@ -280,12 +280,12 @@ inner join `etsy-data-warehouse-prod.catapult.results_metric_day` rmd
     , max(case when metric_display_name  = 'Percent with checkout_start' then is_significant else null end) as significance_checkout_start
     , max(case when metric_display_name  = 'Percent with checkout_start' and relative_change > 0 then is_significant else null end) as positive_significance_checkout_start
 
-    , max(case when metric_display_name = 'winsorized aov' then metric_value_control else null end) as control_aov
-    , max(case when metric_display_name = 'winsorized aov' then metric_value_treatment else null end) as aov
-    , max(case when metric_display_name = 'winsorized aov' then relative_change else null end)/100 as pct_change_aov
-    , max(case when metric_display_name= 'winsorized aov' then p_value else null end) as pval_aov  
-    , max(case when metric_display_name = 'winsorized aov' then is_significant else null end) as significance_aov
-    , max(case when metric_display_name = 'winsorized aov' and relative_change > 0 then is_significant else null end) as positive_significance_aov
+    , max(case when metric_display_name = 'Winsorized AOV' then metric_value_control else null end) as control_aov
+    , max(case when metric_display_name = 'Winsorized AOV' then metric_value_treatment else null end) as aov
+    , max(case when metric_display_name = 'Winsorized AOV' then relative_change else null end)/100 as pct_change_aov
+    , max(case when metric_display_name= 'Winsorized AOV' then p_value else null end) as pval_aov  
+    , max(case when metric_display_name = 'Winsorized AOV' then is_significant else null end) as significance_aov
+    , max(case when metric_display_name = 'Winsorized AOV' and relative_change > 0 then is_significant else null end) as positive_significance_aov
 
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then metric_value_control else null end) as control_mean_prolist_spend
     , max(case when lower(metric_display_name) in ('etsy ads click revenue','mean prolist_total_spend') then metric_value_treatment else null end) as mean_prolist_spend
