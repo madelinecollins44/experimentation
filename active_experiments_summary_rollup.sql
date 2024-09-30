@@ -58,7 +58,13 @@ qualify metric_rnk=1 -- prrioitized cuped values for pval
     , max(case when lower(metric_display_name) = 'conversion rate' then p_value else null end) as pval_conversion_rate
     , max(case when lower(metric_display_name) = 'conversion rate' then is_significant else null end) as significance_conversion_rate
     , max(case when lower(metric_display_name) = 'conversion rate' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_conversion_rate
-
+    --pages per unit
+   , max(case when lower(metric_display_name) = 'pages per unit' then metric_value_control else null end) as control_pages_per_unit
+    , max(case when lower(metric_display_name) = 'pages per unit' then metric_value_treatment else null end) as pages_per_unit
+    , max(case when lower(metric_display_name) = 'pages per unit' then relative_change else null end)/100 as pct_change_pages_per_unit
+    , max(case when lower(metric_display_name) = 'pages per unit' then p_value else null end) as pval_pages_per_unit
+    , max(case when lower(metric_display_name) = 'pages per unit' then is_significant else null end) as significance_pages_per_unit
+    , max(case when lower(metric_display_name) = 'pages per unit' and relative_change > 0 and is_significant = true then 1 else 0 end) as positive_significance_pages_per_unit
 --visit frequency
     , max(case when lower(metric_display_name) = 'mean visits' then metric_value_control else null end) as control_mean_visits
     , max(case when lower(metric_display_name) = 'mean visits' then metric_value_treatment else null end) as mean_visits
@@ -224,6 +230,7 @@ where
       max(a.significance_conversion_rate) AS significance_conversion_rate,
       max(a.significance_mean_visits) AS significance_mean_visits,
       max(a.significance_gms_per_unit) AS significance_gms_per_unit,
+      max(a.significance_pages_per_unit) AS significance_pages_per_unit,
       max(a.significance_percent_error_pg_view) AS significance_percent_error_pg_view,
       max(a.significance_engaged_visit) AS significance_engaged_visit,
       max(a.significance_bounces) AS significance_bounces,
@@ -240,6 +247,7 @@ where
       max(a.positive_significance_conversion_rate) AS positive_significance_conversion_rate,
       max(a.positive_significance_mean_visits) AS positive_significance_mean_visits,
       max(a.positive_significance_gms_per_unit) AS positive_significance_gms_per_unit,
+      max(a.positive_significance_pages_per_unit) AS positive_significance_pages_per_unit,
       max(a.positive_significance_percent_error_pg_view) AS positive_significance_percent_error_pg_view,
       max(a.positive_significance_engaged_visit) AS positive_significance_engaged_visit,
       max(a.positive_significance_bounces) AS positive_significance_bounces,
@@ -378,6 +386,27 @@ where
       max(CASE
         WHEN a.treatment_rank = 3 THEN a.pval_bounces
       END) AS bounces_p_value_3,
+    --pages per unit       
+      control_pages_per_unit,
+     pages_per_unit,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pct_change_pages_per_unit
+      END) AS pages_per_unit_change_1,
+      max(CASE
+        WHEN a.treatment_rank = 1 THEN a.pval_pages_per_unit
+      END) AS pages_per_unit_p_value_1,
+      max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pct_change_pages_per_unit
+      END) AS pages_per_unit_change_2,
+            max(CASE
+        WHEN a.treatment_rank = 2 THEN a.pval_pages_per_unit
+      END) AS pages_per_unit_p_value_2,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pct_change_pages_per_unit
+      END) AS pages_per_unit_change_3,
+      max(CASE
+        WHEN a.treatment_rank = 3 THEN a.pval_pages_per_unit
+      END) AS pages_per_unit_p_value_3,
   -- ads cr
     control_ads_cvr,
     ads_cvr,
