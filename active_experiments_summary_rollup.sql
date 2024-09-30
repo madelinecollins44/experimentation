@@ -1,4 +1,4 @@
- create or replace table etsy-data-warehouse-dev.madelinecollins.active_experiment_summary as (
+ create or replace table etsy-data-warehouse-dev.rollups.active_experiment_summary as (
  --grab all active experiments 
   WITH all_experiments as (
   SELECT
@@ -22,6 +22,7 @@ WHERE _date = CURRENT_DATE()-1
   AND delete_date IS NULL -- Remove deleted experiments
 )
 -- pull out desired metrics 
+-----when inner joining, some experiments are dropped. those experiments are pes that have a current date range change so they will not hit the 100 day liimt 
 , metrics_list as (
 select  
   ae.launch_id
@@ -184,8 +185,7 @@ where
   1=1
   and metric_variant_name != 'off' --removed control as a metric_variant_name, but control metrics will still be there 
   group by all 
-)
-, off_gms AS (
+), off_gms AS (
   SELECT
       exp_off_key_metrics.experiment_id,
       exp_off_key_metrics.off_gms,
