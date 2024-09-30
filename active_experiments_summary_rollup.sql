@@ -167,11 +167,18 @@ qualify metric_rnk=1 -- prrioitized cuped values for pval
     , max(case when lower(metric_display_name) in ('percent with homescreen_exit') then p_value else null end) as pval_pct_homescreen_exit
     , max(case when lower(metric_display_name) in ('percent with homescreen_exit') then is_significant else null end) as significance_pct_homescreen_exit
 
+    , max(case when lower(metric_display_name) in ('percent with homescreen_clickthrough') then metric_value_control else null end) as control_pct_homescreen_clickthrough
+    , max(case when lower(metric_display_name) in ('percent with homescreen_clickthrough') then metric_value_treatment else null end) as pct_homescreen_clickthrough
+    , max(case when lower(metric_display_name) in ('percent with homescreen_clickthrough') then relative_change else null end)/100 as pct_change_pct_homescreen_clickthrough
+    , max(case when lower(metric_display_name) in ('percent with homescreen_clickthrough') then p_value else null end) as pval_pct_homescreen_clickthrough
+    , max(case when lower(metric_display_name) in ('percent with homescreen_clickthrough') then is_significant else null end) as significance_pct_homescreen_clickthrough
+
     , max(case when lower(metric_display_name) in ('percent with engagement_with_collected_content') then metric_value_control else null end) as control_pct_w_engagement_with_collected_content
-    , max(case when lower(metric_display_name) in ('percent with homescreen_exit') then metric_value_treatment else null end) as pct_w_engagement_with_collected_content
-    , max(case when lower(metric_display_name) in ('percent with homescreen_exit') then relative_change else null end)/100 as pct_change_pct_w_engagement_with_collected_content
-    , max(case when lower(metric_display_name) in ('percent with homescreen_exit') then p_value else null end) as pval_pct_w_engagement_with_collected_content
-    , max(case when lower(metric_display_name) in ('percent with homescreen_exit') then is_significant else null end) as significance_pct_w_engagement_with_collected_content
+    , max(case when lower(metric_display_name) in ('percent with engagement_with_collected_content') then metric_value_treatment else null end) as pct_w_engagement_with_collected_content
+    , max(case when lower(metric_display_name) in ('percent with engagement_with_collected_content') then relative_change else null end)/100 as pct_change_pct_w_engagement_with_collected_content
+    , max(case when lower(metric_display_name) in ('percent with engagement_with_collected_content') then p_value else null end) as pval_pct_w_engagement_with_collected_content
+    , max(case when lower(metric_display_name) in ('percent with engagement_with_collected_content') then is_significant else null end) as significance_pct_w_engagement_with_collected_content
+
     , row_number() over (partition by launch_id order by max(case when lower(metric_display_name) = 'conversion rate' then p_value else null end)) AS treatment_rank
 
   from metrics_list
@@ -233,6 +240,7 @@ where
       max(a.significance_mean_prolist_spend) AS significance_mean_prolist_spend,
       max(a.significance_mean_osa_revenue) AS significance_mean_osa_revenue,
       max(a.significance_pct_homescreen_exit) AS significance_pct_homescreen_exit,
+      max(a.significance_pct_homescreen_clickthrough) AS significance_pct_homescreen_clickthrough,
       max(a.significance_pct_w_engagement_with_collected_content) AS significance_pct_w_engagement_with_collected_content,
      --cr
       control_conversion_rate,
@@ -324,6 +332,11 @@ where
     , pct_homescreen_exit
     , pct_change_pct_homescreen_exit
     , pval_pct_homescreen_exit
+    --homescreen clickthrough
+   , control_pct_homescreen_clickthrough
+    , pct_homescreen_clickthrough
+    , pct_change_pct_homescreen_clickthrough
+    , pval_pct_homescreen_clickthrough
 --engaged and collect
   , control_pct_w_engagement_with_collected_content
   , pct_w_engagement_with_collected_content
