@@ -178,7 +178,85 @@ view: active_experiment_summary_rollup {
     type: number
     group_label: "KHM Tracker"
     label: "ATC"
-    sql: case when ${atc} is null then 0 else 1 end;;
+    sql: case when ${TABLE}.atc is null then 0 else 1 end;;
+  }
+  dimension: has_conversion_rate {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Conversion Rate"
+    sql: case when ${TABLE}.conversion_rate is null then 0 else 1 end;;
+  }
+  dimension: has_pages_per_unit {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Pages per Unit"
+    sql: case when ${TABLE}.pages_per_unit is null then 0 else 1 end;;
+  }
+  dimension: has_mean_visits {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Visit Frequency"
+    sql: case when ${TABLE}.mean_visits is null then 0 else 1 end;;
+  }
+  dimension: has_mean_osa_revenue {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Mean OSA Revenue"
+    sql: case when ${TABLE}.mean_osa_revenue is null then 0 else 1 end;;
+  }
+  dimension: has_mean_engaged_visit {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Mean Engaged Visit"
+    sql: case when ${TABLE}.mean_engaged_visit is null then 0 else 1 end;;
+  }
+  dimension: has_ads_acxv {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Ads ACXV"
+    sql: case when ${TABLE}.ads_acxv is null then 0 else 1 end;;
+  }
+  dimension: has_checkout_start {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Checkout Start"
+    sql: case when ${TABLE}.checkout_start is null then 0 else 1 end;;
+  }
+  dimension: has_winsorized_acxv {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Winsorized ACXV"
+    sql: case when ${TABLE}.winsorized_acxv is null then 0 else 1 end;;
+  }
+  dimension: has_bounces {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Bounces"
+    sql: case when ${TABLE}.bounces is null then 0 else 1 end;;
+  }
+  dimension: has_ads_cvr {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Ads CVR"
+    sql: case when ${TABLE}.ads_cvr is null then 0 else 1 end;;
+  }
+  dimension: has_opu {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Orders Per User"
+    sql: case when ${TABLE}.opu is null then 0 else 1 end;;
+  }
+  dimension: has_aov {
+    type: number
+    group_label: "KHM Tracker"
+    label: "AOV"
+    sql: case when ${TABLE}.aov is null then 0 else 1 end;;
+  }
+  dimension: has_mean_prolist_spend {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Mean Prolist Spend"
+    sql: case when ${TABLE}.mean_prolist_spend is null then 0 else 1 end;;
   }
 
   ##############measure
