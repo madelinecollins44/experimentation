@@ -1,5 +1,5 @@
-view: active_experiment_summary_rollup {
-  sql_table_name: `etsy-data-warehouse-dev.rollups.active_experiment_summary` ;;
+view: active_experiment_summary {
+  sql_table_name: `etsy-data-warehouse-prod.rollups.active_experiment_summary` ;;
 
   dimension: bucketing_type {
     type: string
@@ -69,7 +69,7 @@ view: active_experiment_summary_rollup {
     group_label: "Stat Sig Change"
     label: "Stat Sig Change- Pages per Unit"
     sql: ${TABLE}.significance_pages_per_unit;;
-    }
+  }
 
   dimension: significance_ads_cvr {
     type: yesno
@@ -173,92 +173,194 @@ view: active_experiment_summary_rollup {
     sql: ${TABLE}.team ;;
   }
 
-  ## add in dimensions make sure all khm are in catapult
-  dimension: has_atc {
+  ## add in measures make sure all khm are in catapult
+  dimension: d_has_atc {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "ATC"
     sql: case when ${TABLE}.atc is null then 0 else 1 end;;
   }
-  dimension: has_conversion_rate {
+  dimension: d_has_conversion_rate {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Conversion Rate"
     sql: case when ${TABLE}.conversion_rate is null then 0 else 1 end;;
   }
-  dimension: has_pages_per_unit {
+  dimension: d_has_pages_per_unit {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Pages per Unit"
     sql: case when ${TABLE}.pages_per_unit is null then 0 else 1 end;;
   }
-  dimension: has_mean_visits {
+  dimension: d_has_mean_visits {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Visit Frequency"
     sql: case when ${TABLE}.mean_visits is null then 0 else 1 end;;
   }
-  dimension: has_mean_osa_revenue {
+  dimension: d_has_mean_osa_revenue {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Mean OSA Revenue"
     sql: case when ${TABLE}.mean_osa_revenue is null then 0 else 1 end;;
   }
-  dimension: has_mean_engaged_visit {
+  dimension: d_has_mean_engaged_visit {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Mean Engaged Visit"
     sql: case when ${TABLE}.mean_engaged_visit is null then 0 else 1 end;;
   }
-  dimension: has_ads_acxv {
+  dimension: d_has_ads_acxv {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Ads ACXV"
     sql: case when ${TABLE}.ads_acxv is null then 0 else 1 end;;
   }
-  dimension: has_checkout_start {
+  dimension: d_has_checkout_start {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Checkout Start"
     sql: case when ${TABLE}.checkout_start is null then 0 else 1 end;;
   }
-  dimension: has_winsorized_acxv {
+  dimension: d_has_winsorized_acxv {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Winsorized ACXV"
     sql: case when ${TABLE}.winsorized_acxv is null then 0 else 1 end;;
   }
-  dimension: has_bounces {
+  dimension: d_has_bounces {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Bounces"
     sql: case when ${TABLE}.bounces is null then 0 else 1 end;;
   }
-  dimension: has_ads_cvr {
+  dimension: d_has_ads_cvr {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Ads CVR"
     sql: case when ${TABLE}.ads_cvr is null then 0 else 1 end;;
   }
-  dimension: has_opu {
+  dimension: d_has_opu {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Orders Per User"
     sql: case when ${TABLE}.opu is null then 0 else 1 end;;
   }
-  dimension: has_aov {
+  dimension: d_has_aov {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "AOV"
     sql: case when ${TABLE}.aov is null then 0 else 1 end;;
   }
-  dimension: has_mean_prolist_spend {
+  dimension: d_has_mean_prolist_spend {
     type: number
-    group_label: "KHM Tracker"
+    hidden: yes
     label: "Mean Prolist Spend"
     sql: case when ${TABLE}.mean_prolist_spend is null then 0 else 1 end;;
   }
-
+  dimension: d_has_ocb {
+    type: number
+    hidden: yes
+    label: "Orders per Converting Browser"
+    sql: case when ${TABLE}.ocb is null then 0 else 1 end;;
+  }
+  measure: has_atc {
+    type: number
+    group_label: "KHM Tracker"
+    label: "ATC"
+    sql: max(case when ${TABLE}.atc is null then 0 else 1 end);;
+  }
+  measure: has_conversion_rate {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Conversion Rate"
+    sql: max(case when ${TABLE}.conversion_rate is null then 0 else 1 end);;
+  }
+  measure: has_pages_per_unit {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Pages per Unit"
+    sql: max(case when ${TABLE}.pages_per_unit is null then 0 else 1 end);;
+  }
+  measure: has_mean_visits {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Visit Frequency"
+    sql: max(case when ${TABLE}.mean_visits is null then 0 else 1 end);;
+  }
+  measure: has_mean_osa_revenue {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Mean OSA Revenue"
+    sql: max(case when ${TABLE}.mean_osa_revenue is null then 0 else 1 end);;
+  }
+  measure: has_mean_engaged_visit {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Mean Engaged Visit"
+    sql: max(case when ${TABLE}.mean_engaged_visit is null then 0 else 1 end);;
+  }
+  measure: has_ads_acxv {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Ads ACXV"
+    sql: max(case when ${TABLE}.ads_acxv is null then 0 else 1 end);;
+  }
+  measure: has_checkout_start {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Checkout Start"
+    sql: max(case when ${TABLE}.checkout_start is null then 0 else 1 end);;
+  }
+  measure: has_winsorized_acxv {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Winsorized ACXV"
+    sql: max(case when ${TABLE}.winsorized_acxv is null then 0 else 1 end);;
+  }
+  measure: has_bounces {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Bounces"
+    sql: max(case when ${TABLE}.bounces is null then 0 else 1 end);;
+  }
+  measure: has_ads_cvr {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Ads CVR"
+    sql: max(case when ${TABLE}.ads_cvr is null then 0 else 1 end);;
+  }
+  measure: has_opu {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Orders Per User"
+    sql: max(case when ${TABLE}.opu is null then 0 else 1 end);;
+  }
+  measure: has_aov {
+    type: number
+    group_label: "KHM Tracker"
+    label: "AOV"
+    sql: max(case when ${TABLE}.aov is null then 0 else 1 end);;
+  }
+  measure: has_mean_prolist_spend {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Mean Prolist Spend"
+    sql: max(case when ${TABLE}.mean_prolist_spend is null then 0 else 1 end);;
+  }
+  measure: has_ocb {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Orders per Converting Browser"
+    sql: max(case when ${TABLE}.ocb is null then 0 else 1 end);;
+  }
+  # add together dimensions here so dont need to worry about aggregating aggregations 
+  measure: has_khm {
+    type: number
+    group_label: "KHM Tracker"
+    label: "Total Count"
+    sql: sum(${d_has_atc}+${d_has_conversion_rate}+${d_has_pages_per_unit}+${d_has_mean_osa_revenue}+${d_has_mean_visits}+${d_has_mean_engaged_visit}+${d_has_ads_acxv}+${d_has_checkout_start}+${d_has_winsorized_acxv}+${d_has_bounces}+${d_has_ads_cvr}+${d_has_opu}+${d_has_aov}+${d_has_mean_prolist_spend}+${d_has_ocb});;
+  }
   ##############measure
   measure: conversion_rate {
     type: average
