@@ -1,6 +1,6 @@
 view: active_experiment_summary {
   sql_table_name: `etsy-data-warehouse-prod.rollups.active_experiment_summary` ;;
-
+  
   dimension: bucketing_type {
     type: string
     sql: ${TABLE}.bucketing_type ;;
@@ -67,98 +67,98 @@ view: active_experiment_summary {
   dimension: significance_pages_per_unit{
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Pages per Unit"
+    label: "Pages per Unit"
     sql: ${TABLE}.significance_pages_per_unit;;
   }
-
+  
   dimension: significance_ads_cvr {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Ads CVR"
+    label: "Ads CVR"
     sql: ${TABLE}.significance_ads_cvr ;;
   }
   dimension: significance_aov {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- AOV"
+    label: "AOV"
     sql: ${TABLE}.significance_aov ;;
   }
   dimension: significance_atc {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- ATC"
+    label: "ATC"
     sql: ${TABLE}.significance_atc ;;
   }
   dimension: significance_bounces {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Bounces"
+    label: "Bounces"
     sql: ${TABLE}.significance_bounces ;;
   }
   dimension: significance_checkout_start {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Checkout Starts"
+    label: "Checkout Starts"
     sql: ${TABLE}.significance_checkout_start ;;
   }
   dimension: significance_conversion_rate {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- CR"
+    label: "CR"
     sql: ${TABLE}.significance_conversion_rate ;;
   }
   dimension: significance_engaged_visit {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Engaged Visits"
+    label: "Engaged Visits"
     sql: ${TABLE}.significance_engaged_visit ;;
   }
   dimension: significance_gms_per_unit {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- GMS Per Unit"
+    label: "GMS Per Unit"
     sql: ${TABLE}.significance_gms_per_unit ;;
   }
   dimension: significance_mean_osa_revenue {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Mean OSA Revenue"
+    label: "Mean OSA Revenue"
     sql: ${TABLE}.significance_mean_osa_revenue ;;
   }
   dimension: significance_mean_prolist_spend {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Mean Prolist Spend"
+    label: "Mean Prolist Spend"
     sql: ${TABLE}.significance_mean_prolist_spend ;;
   }
   dimension: significance_mean_visits {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Mean Visits"
+    label: "Mean Visits"
     sql: ${TABLE}.significance_mean_visits ;;
   }
   dimension: significance_ocb {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Orders Per Converting Browser"
+    label: "Orders Per Converting Browser"
     sql: ${TABLE}.significance_ocb ;;
   }
   dimension: significance_opu {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Orders Per User"
+    label: "Orders Per User"
     sql: ${TABLE}.significance_opu ;;
   }
   dimension: significance_percent_error_pg_view {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- % with Error Pageview"
+    label: "% with Error Pageview"
     sql: ${TABLE}.significance_percent_error_pg_view ;;
   }
   dimension: significance_winsorized_acxv {
     type: yesno
     group_label: "Stat Sig Change"
-    label: "Stat Sig Change- Winsorized ACXV"
+    label: "Winsorized ACXV"
     sql: ${TABLE}.significance_winsorized_acxv ;;
   }
   dimension_group: start {
@@ -172,7 +172,7 @@ view: active_experiment_summary {
     type: string
     sql: ${TABLE}.team ;;
   }
-
+  
   ## add in measures make sure all khm are in catapult
   dimension: d_has_atc {
     type: number
@@ -354,7 +354,7 @@ view: active_experiment_summary {
     label: "Orders per Converting Browser"
     sql: max(case when ${TABLE}.ocb is null then 0 else 1 end);;
   }
-  # add together dimensions here so dont need to worry about aggregating aggregations 
+  # add together dimensions here so dont need to worry about aggregating aggregations
   measure: has_khm {
     type: number
     group_label: "KHM Tracker"
@@ -376,7 +376,7 @@ view: active_experiment_summary {
     sql: ${TABLE}.control_conversion_rate ;;
     value_format: "0.00%"
   }
-
+  
   measure: pct_change_conversion_rate {
     type: average
     group_label: "% Change"
@@ -451,7 +451,7 @@ view: active_experiment_summary {
     type: average
     group_label: "Treatment"
     label: "Error Pageview"
-    sql: ${TABLE}.error_pg_view ;;
+    sql: ${TABLE}.percent_error_pg_view ;;
     value_format: "0.00%"
   }
   measure: control_percent_error_pg_view {
@@ -465,14 +465,14 @@ view: active_experiment_summary {
     type: average
     group_label: "% Change"
     label: "Error Pageview % Change"
-    sql: ${TABLE}.pct_change_error_pg_view ;;
+    sql: ${TABLE}.pct_change_percent_error_pg_view ;;
     value_format: "0.00%"
   }
   measure: pval_error_pg_view {
     type: average
     group_label: "P-Values"
     label: "Error Pageview P-Value"
-    sql: ${TABLE}.pval_error_pg_view ;;
+    sql: ${TABLE}.pval_percent_error_pg_view ;;
     value_format: "0.00"
   }
   measure: mean_engaged_visit {
