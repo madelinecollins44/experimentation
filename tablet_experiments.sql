@@ -2,7 +2,8 @@
 -------------------------------------------------------------------------------------------
 -- INPUT
 -------------------------------------------------------------------------------------------
-DECLARE config_flag_param STRING DEFAULT "native_bucketing.ios.BOERecommendationsOnReceipts";
+DECLARE config_flag_param STRING 
+    -- DEFAULT "native_bucketing.ios.BOERecommendationsOnReceipts";
 DECLARE start_date DATE; -- DEFAULT "2023-08-22";
 DECLARE end_date DATE; -- DEFAULT "2023-09-04";
 DECLARE is_event_filtered BOOL; -- DEFAULT FALSE;
