@@ -29,6 +29,12 @@ view: active_experiment_summary {
       url: "https://atlas.etsycorp.com/catapult/{{launch_id._value}}"
     }
   }
+  
+  dimension: pe_experiment {
+    type: number
+    sql: case when contains(${TABLE}.name, "%PE%" then 1 else 0 end ;;
+  }
+
   dimension: number_of_treatments {
     type: number
     sql: ${TABLE}.number_of_treatments ;;
