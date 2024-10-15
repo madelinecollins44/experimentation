@@ -136,6 +136,7 @@ select
   p_value, 
   power as _power, 
   percent_change,
+  significance
 from 
   `etsy-data-warehouse-prod.catapult.catapult_metrics_results` 
 INNER JOIN experiments USING (_date, experiment_id)
@@ -143,7 +144,6 @@ inner join etsy-data-warehouse-prod.etsy_atlas.catapult_metrics using (metric_id
 where 
   _date > '2024-01-01'
   AND segmentation = "is_tablet"
-  and experiment_id = 1305470782469
   AND metric_id IN (
     9542279976, # Conversion rate (non-CUPED)
     653265516272, # Winsorized AC*V (non-CUPED)
@@ -163,26 +163,32 @@ select
   treatment,
   is_tablet,
   -- tablet results
+  max(case when metric_id in (9542279976) then significance end) as cr_signficance,
   max(case when metric_id in (9542279976) then p_value end) as cr_pval,
   max(case when metric_id in (9542279976) then percent_change end) as cr_percent_change,
   max(case when metric_id in (9542279976) then _power end) as cr_power,
 
+  max(case when metric_id in (653265516272) then significance end) as acvv_signficance,
   max(case when metric_id in (653265516272) then p_value end) as acvv_pval,
   max(case when metric_id in (653265516272) then percent_change end) as acvv_percent_change,
   max(case when metric_id in (653265516272) then _power end) as acvv_power,
 
+  max(case when metric_id in (1304192866864) then significance end) as mean_engaged_visits_signficance,
   max(case when metric_id in (1304192866864) then p_value end) as mean_engaged_visits_pval,
   max(case when metric_id in (1304192866864) then percent_change end) as mean_engaged_visits_percent_change,
   max(case when metric_id in (1304192866864) then _power end) as mean_engaged_visits_power,
 
+  max(case when metric_id in (47362065341) then significance end) as mean_visits_signficance,
   max(case when metric_id in (47362065341) then p_value end) as mean_visits_pval,
   max(case when metric_id in (47362065341) then percent_change end) as mean_visits_percent_change,
   max(case when metric_id in (47362065341) then _power end) as mean_visits_power,
 
+  max(case when metric_id in (1303188452741) then significance end) as opu_signficance,
   max(case when metric_id in (1303188452741) then p_value end) as opu_pval,
   max(case when metric_id in (1303188452741) then percent_change end) as opu_percent_change,
   max(case when metric_id in (1303188452741) then _power end) as opu_power,
 
+  max(case when metric_id in (1303200836305) then significance end) as aov_signficance,
   max(case when metric_id in (1303200836305) then p_value end) as aov_pval,
   max(case when metric_id in (1303200836305) then percent_change end) as aov_percent_change,
   max(case when metric_id in (1303200836305) then _power end) as aov_power
@@ -192,8 +198,8 @@ from
 inner join 
   etsy-data-warehouse-prod.etsy_atlas.catapult_launches b
   on a.experiment_id=b.launch_id
-where launch_id = 1305470782469
 group by all
+
 
 ------------------------------------------------
 --testing
