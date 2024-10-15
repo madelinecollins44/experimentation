@@ -29,7 +29,7 @@ view: active_experiment_summary {
       url: "https://atlas.etsycorp.com/catapult/{{launch_id._value}}"
     }
   }
-  
+
   dimension: pe_experiment {
     type: number
     sql: case when contains(${TABLE}.name, "%PE%" then 1 else 0 end ;;
@@ -468,13 +468,13 @@ view: active_experiment_summary {
     type: number
     group_label: "KHM Tracker"
     label: "All KHM Check"
-    sql: max(case when ${TABLE}.mean_prolist_spend is not null and ${TABLE}.aov is not null and ${TABLE}.opu is not null and ${TABLE}.mean_engaged_visit is not null and ${TABLE}.mean_visits is not null then 1 else 0 end);;
+    sql: max(case when ${TABLE}.ads_cvr is not null and ${TABLE}.ads_acxv is not null and${TABLE}.aov is not null and ${TABLE}.opu is not null and ${TABLE}.mean_engaged_visit is not null and ${TABLE}.mean_visits is not null then 1 else 0 end);;
     # sql: max(case when ${TABLE}.ocb is not null and ${TABLE}.mean_prolist_spend is not null and ${TABLE}.aov is not null and ${TABLE}.opu is not null and ${TABLE}.ads_cvr is not null and ${TABLE}.bounces is not null and ${TABLE}.winsorized_acxv is not null and ${TABLE}.checkout_start is not null and ${TABLE}.ads_acxv is not null and ${TABLE}.mean_engaged_visit is not null and ${TABLE}.mean_osa_revenue is not null and ${TABLE}.mean_visits is not null and ${TABLE}.pages_per_unit is not null and ${TABLE}.conversion_rate is not null and ${TABLE}.atc is not null then 1 else 0 end);;
   }
   dimension: has_all_khm {
     type: number
-    sql: case when ${TABLE}.mean_prolist_spend is not null and ${TABLE}.aov is not null and ${TABLE}.opu is not null and ${TABLE}.mean_engaged_visit is not null and ${TABLE}.mean_visits is not null then 1 else 0 end ;;
-  }
+    sql: case when ${TABLE}.ads_cvr is not null and ${TABLE}.ads_acxv is not null and${TABLE}.aov is not null and ${TABLE}.opu is not null and ${TABLE}.mean_engaged_visit is not null and ${TABLE}.mean_visits is not null then 1 else 0 end;;
+    }
 ############## measure
   measure: conversion_rate {
     type: average
