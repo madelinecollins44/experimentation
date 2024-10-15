@@ -1,18 +1,10 @@
 view: active_experiment_summary {
   sql_table_name: `etsy-data-warehouse-prod.rollups.active_experiment_summary` ;;
-  
+
   dimension: bucketing_type {
     type: string
     sql: ${TABLE}.bucketing_type ;;
   }
-  # dimension: catapult_link {
-  #   type: string
-  #   sql: 'https://atlas.etsycorp.com/catapult/' || ${launch_id} ;;
-  #   link: {
-  #     label: "Catapult link"
-  #     url: "https://atlas.etsycorp.com/catapult/{{launch_id._value}}"
-  #   }
-  # }
   dimension: days_running {
     type: number
     sql: ${TABLE}.days_running ;;
@@ -28,6 +20,14 @@ view: active_experiment_summary {
   dimension: initiative {
     type: string
     sql: ${TABLE}.initiative ;;
+  }
+  dimension: name {
+    type: string
+    sql: ${TABLE}.name ;;
+    link: {
+      label: "Catapult link"
+      url: "https://atlas.etsycorp.com/catapult/{{launch_id._value}}"
+    }
   }
   dimension: number_of_treatments {
     type: number
@@ -56,110 +56,117 @@ view: active_experiment_summary {
     type: string
     sql: ${TABLE}.outcome ;;
   }
+  dimension: analyst {
+    type: string
+    sql: ${TABLE}.analyst ;;
+  }
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
   }
-  dimension: name {
-    type: string
-    sql: ${TABLE}.name ;;
-  }
-  dimension: significance_pages_per_unit{
-    type: yesno
+
+  dimension: significance_pages_per_unit {
+    type: number
     group_label: "Stat Sig Change"
     label: "Pages per Unit"
-    sql: ${TABLE}.significance_pages_per_unit;;
+    sql: case when ${TABLE}.significance_pages_per_unit=true then 1 else 0 end;;
   }
-  
+
   dimension: significance_ads_cvr {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Ads CVR"
-    sql: ${TABLE}.significance_ads_cvr ;;
+    sql: case when ${TABLE}.significance_ads_cvr =true then 1 else 0 end;;
+  }
+  dimension: significance_ads_acxv {
+    type: number
+    group_label: "Stat Sig Change"
+    label: "Ads ACXV"
+    sql: case when ${TABLE}.significance_ads_acxv =true then 1 else 0 end;;
   }
   dimension: significance_aov {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "AOV"
-    sql: ${TABLE}.significance_aov ;;
+    sql: case when ${TABLE}.significance_aov =true then 1 else 0 end;;
   }
   dimension: significance_atc {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "ATC"
-    sql: ${TABLE}.significance_atc ;;
+    sql: case when ${TABLE}.significance_atc =true then 1 else 0 end;;
   }
   dimension: significance_bounces {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Bounces"
-    sql: ${TABLE}.significance_bounces ;;
+    sql: case when ${TABLE}.significance_bounces =true then 1 else 0 end;;
   }
   dimension: significance_checkout_start {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Checkout Starts"
-    sql: ${TABLE}.significance_checkout_start ;;
+    sql: case when ${TABLE}.significance_checkout_start =true then 1 else 0 end;;
   }
   dimension: significance_conversion_rate {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "CR"
-    sql: ${TABLE}.significance_conversion_rate ;;
+    sql: case when ${TABLE}.significance_conversion_rate =true then 1 else 0 end;;
   }
   dimension: significance_engaged_visit {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Engaged Visits"
-    sql: ${TABLE}.significance_engaged_visit ;;
+    sql: case when ${TABLE}.significance_engaged_visit =true then 1 else 0 end;;
   }
   dimension: significance_gms_per_unit {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "GMS Per Unit"
-    sql: ${TABLE}.significance_gms_per_unit ;;
+    sql: case when ${TABLE}.significance_gms_per_unit =true then 1 else 0 end;;
   }
   dimension: significance_mean_osa_revenue {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Mean OSA Revenue"
-    sql: ${TABLE}.significance_mean_osa_revenue ;;
+    sql: case when ${TABLE}.significance_mean_osa_revenue =true then 1 else 0 end;;
   }
   dimension: significance_mean_prolist_spend {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Mean Prolist Spend"
-    sql: ${TABLE}.significance_mean_prolist_spend ;;
+    sql: case when ${TABLE}.significance_mean_prolist_spend =true then 1 else 0 end;;
   }
   dimension: significance_mean_visits {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Mean Visits"
-    sql: ${TABLE}.significance_mean_visits ;;
+    sql: case when ${TABLE}.significance_mean_visits =true then 1 else 0 end;;
   }
   dimension: significance_ocb {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Orders Per Converting Browser"
-    sql: ${TABLE}.significance_ocb ;;
+    sql: case when ${TABLE}.significance_ocb =true then 1 else 0 end;;
   }
   dimension: significance_opu {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Orders Per User"
-    sql: ${TABLE}.significance_opu ;;
+    sql: case when ${TABLE}.significance_opu =true then 1 else 0 end;;
   }
   dimension: significance_percent_error_pg_view {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "% with Error Pageview"
-    sql: ${TABLE}.significance_percent_error_pg_view ;;
+    sql: case when ${TABLE}.significance_percent_error_pg_view =true then 1 else 0 end;;
   }
   dimension: significance_winsorized_acxv {
-    type: yesno
+    type: number
     group_label: "Stat Sig Change"
     label: "Winsorized ACXV"
-    sql: ${TABLE}.significance_winsorized_acxv ;;
+    sql: case when ${TABLE}.significance_winsorized_acxv =true then 1 else 0 end;;
   }
   dimension_group: start {
     type: time
@@ -172,8 +179,98 @@ view: active_experiment_summary {
     type: string
     sql: ${TABLE}.team ;;
   }
-  
-  ## add in measures make sure all khm are in catapult
+  measure: stat_sig_count_atc {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "ATC"
+    sql:count(distinct case when ${TABLE}.significance_atc then launch_id end);;
+  }
+  measure: stat_sig_count_conversion_rate {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Conversion Rate"
+    sql:count(distinct case when ${TABLE}.significance_conversion_rate then launch_id end);;
+  }
+  measure: stat_sig_count_pages_per_unit {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Pages per Unit"
+    sql:count(distinct case when ${TABLE}.significance_pages_per_unit then launch_id end);;
+  }
+  measure: stat_sig_count_mean_visits {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Visit Frequency"
+    sql:count(distinct case when ${TABLE}.significance_mean_visits then launch_id end);;
+  }
+  measure: stat_sig_count_mean_osa_revenue {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Mean OSA Revenue"
+    sql:count(distinct case when ${TABLE}.significance_mean_osa_revenue then launch_id end);;
+  }
+  measure: stat_sig_count_mean_engaged_visit {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Mean Engaged Visit"
+    sql:count(distinct case when ${TABLE}.significance_engaged_visit then launch_id end);;
+  }
+  measure: stat_sig_count_ads_acxv {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Ads ACXV"
+    sql:count(distinct case when ${TABLE}.significance_ads_acxv then launch_id end);;
+  }
+  measure: stat_sig_count_checkout_start {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Checkout Start"
+    sql:count(distinct case when ${TABLE}.significance_checkout_start then launch_id end);;
+  }
+  measure: stat_sig_count_winsorized_acxv {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Winsorized ACXV"
+    sql:count(distinct case when ${TABLE}.significance_winsorized_acxv then launch_id end);;
+  }
+  measure: stat_sig_count_bounces {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Bounces"
+    sql:count(distinct case when ${TABLE}.significance_bounces then launch_id end);;
+  }
+  measure: stat_sig_count_ads_cvr {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Ads CVR"
+    sql:count(distinct case when ${TABLE}.significance_ads_cvr then launch_id end);;
+  }
+  measure: stat_sig_count_opu {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Orders Per User"
+    sql:count(distinct case when ${TABLE}.significance_opu then launch_id end);;
+  }
+  measure: stat_sig_count_aov {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "AOV"
+    sql:count(distinct case when ${TABLE}.significance_aov then launch_id end);;
+  }
+  measure: stat_sig_count_mean_prolist_spend {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Mean Prolist Spend"
+    sql:count(distinct case when ${TABLE}.significance_mean_prolist_spend then launch_id end);;
+  }
+  measure: stat_sig_count_ocb {
+    type: number
+    group_label: "Count of Stat Sig Experiments"
+    label: "Orders per Converting Browser"
+    sql:count(distinct case when ${TABLE}.significance_ocb then launch_id end);;
+  }
+
+## add in measures make sure all khm are in catapult
   dimension: d_has_atc {
     type: number
     hidden: yes
@@ -354,14 +451,25 @@ view: active_experiment_summary {
     label: "Orders per Converting Browser"
     sql: max(case when ${TABLE}.ocb is null then 0 else 1 end);;
   }
-  # add together dimensions here so dont need to worry about aggregating aggregations
+# add together dimensions here so dont need to worry about aggregating aggregations
+# measure: has_khm {
+#   type: number
+#   group_label: "KHM Tracker"
+#   label: "Total Count"
+#   sql: sum(${d_has_atc}+${d_has_conversion_rate}+${d_has_pages_per_unit}+${d_has_mean_osa_revenue}+${d_has_mean_visits}+${d_has_mean_engaged_visit}+${d_has_ads_acxv}+${d_has_checkout_start}+${d_has_winsorized_acxv}+${d_has_bounces}+${d_has_ads_cvr}+${d_has_opu}+${d_has_aov}+${d_has_mean_prolist_spend}+${d_has_ocb});;
+# }
   measure: has_khm {
     type: number
     group_label: "KHM Tracker"
-    label: "Total Count"
-    sql: sum(${d_has_atc}+${d_has_conversion_rate}+${d_has_pages_per_unit}+${d_has_mean_osa_revenue}+${d_has_mean_visits}+${d_has_mean_engaged_visit}+${d_has_ads_acxv}+${d_has_checkout_start}+${d_has_winsorized_acxv}+${d_has_bounces}+${d_has_ads_cvr}+${d_has_opu}+${d_has_aov}+${d_has_mean_prolist_spend}+${d_has_ocb});;
+    label: "All KHM Check"
+    sql: max(case when ${TABLE}.mean_prolist_spend is not null and ${TABLE}.aov is not null and ${TABLE}.opu is not null and ${TABLE}.mean_engaged_visit is not null and ${TABLE}.mean_visits is not null then 1 else 0 end);;
+    # sql: max(case when ${TABLE}.ocb is not null and ${TABLE}.mean_prolist_spend is not null and ${TABLE}.aov is not null and ${TABLE}.opu is not null and ${TABLE}.ads_cvr is not null and ${TABLE}.bounces is not null and ${TABLE}.winsorized_acxv is not null and ${TABLE}.checkout_start is not null and ${TABLE}.ads_acxv is not null and ${TABLE}.mean_engaged_visit is not null and ${TABLE}.mean_osa_revenue is not null and ${TABLE}.mean_visits is not null and ${TABLE}.pages_per_unit is not null and ${TABLE}.conversion_rate is not null and ${TABLE}.atc is not null then 1 else 0 end);;
   }
-  ##############measure
+  dimension: has_all_khm {
+    type: number
+    sql: case when ${TABLE}.mean_prolist_spend is not null and ${TABLE}.aov is not null and ${TABLE}.opu is not null and ${TABLE}.mean_engaged_visit is not null and ${TABLE}.mean_visits is not null then 1 else 0 end ;;
+  }
+############## measure
   measure: conversion_rate {
     type: average
     group_label: "Treatment"
@@ -376,7 +484,7 @@ view: active_experiment_summary {
     sql: ${TABLE}.control_conversion_rate ;;
     value_format: "0.00%"
   }
-  
+
   measure: pct_change_conversion_rate {
     type: average
     group_label: "% Change"
