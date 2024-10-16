@@ -1,6 +1,7 @@
-------------------------------------------------
+------------------------------------------------------------------------------------------------
 TABLET VS NON TABLET
-------------------------------------------------
+  --this is browser bucketed only. right now segmentations dont exist for user bucketed experiments
+------------------------------------------------------------------------------------------------
 WITH experiments AS (
   SELECT experiment_id, MAX(_date) AS _date
   FROM `etsy-data-warehouse-prod.catapult.catapult_metrics_results` 
@@ -16,7 +17,6 @@ WITH experiments AS (
     AND platform in ('iOS','Android') -- only BOE experiments 
   GROUP BY 1
 )
-  
 select
   _date, 
   experiment_id,
@@ -26,10 +26,12 @@ select
   IF(segment = "1", "tablet", "not_tablet") AS is_tablet,
   population_1_name as control,
   population_2_name as treatment,
+  population_1_browser_count as control_count,
+  population_2_browser_count as treatment_count,
   p_value, 
   power as _power, 
   percent_change,
-  significance
+  coalesce(significance,false) as significance
 from 
   `etsy-data-warehouse-prod.catapult.catapult_metrics_results` 
 INNER JOIN experiments USING (_date, experiment_id)
@@ -55,7 +57,8 @@ select
   control,
   treatment,
   is_tablet,
-  -- tablet results
+  control_count,
+  treatment_count,
   max(case when metric_id in (9542279976) then significance end) as cr_signficance,
   max(case when metric_id in (9542279976) then p_value end) as cr_pval,
   max(case when metric_id in (9542279976) then percent_change end) as cr_percent_change,
@@ -91,7 +94,9 @@ from
 inner join 
   etsy-data-warehouse-prod.etsy_atlas.catapult_launches b
   on a.experiment_id=b.launch_id
+where experiment_id = 1258136522870
 group by all
+
 
 
 ------------------------------------------------
