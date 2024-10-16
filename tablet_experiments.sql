@@ -38,7 +38,7 @@ INNER JOIN experiments USING (_date, experiment_id)
 inner join etsy-data-warehouse-prod.etsy_atlas.catapult_metrics using (metric_id)
 where 
   _date > '2024-01-01'
-  -- AND segmentation = "is_tablet"
+  AND segmentation = 'any'
   AND metric_id IN (
     1029227163677, # Conversion rate 
     1029227163605, # Winsorized AC*V 
