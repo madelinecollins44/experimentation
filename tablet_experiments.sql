@@ -4,19 +4,13 @@ overall results
 ------------------------------------------------------------------------------------------------
 WITH experiments AS (
   SELECT experiment_id, MAX(_date) AS _date
-  FROM `etsy-data-warehouse-prod.catapult.catapult_metrics_results` 
+  FROM `etsy-data-warehouse-prod.catapult.catapult_metrics_results` a
+  inner join `etsy-data-warehouse-prod.etsy_atlas.catapult_launches_expected_platforms` b
+    on a.experiment_id=b.launch_id
   WHERE _date >= "2024-01-01" 
-    AND platform in ('iOS','Android') -- only BOE experiments 
+  AND lower(name) like ('%boe%') -- only BOE experiments 
   GROUP BY all
-)
-, tablet_metrics as (
-WITH experiments AS (
-  SELECT experiment_id, MAX(_date) AS _date
-  FROM `etsy-data-warehouse-prod.catapult.catapult_metrics_results` 
-  WHERE _date >= "2024-01-01" 
-    AND platform in ('iOS','Android') -- only BOE experiments 
-  GROUP BY 1
-)
+), tablet_metrics as (
 select
   _date, 
   experiment_id,
