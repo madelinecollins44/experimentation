@@ -437,36 +437,22 @@ group by
 qualify
   row_num = 1
 )
-,experiment_names_with_bucketing_type AS (
-   select
-      ab_test,
-        (CASE WHEN "user" IN UNNEST(ARRAY_AGG(DISTINCT experimental_unit)) THEN "user" ELSE "browser" END) AS experimental_unit
-    FROM 
-      `etsy-data-warehouse-prod.catapult.segment_imbalance_tests`
-    GROUP BY ab_test
-  )
-, experiment_ids AS (
-  select
-    a.ab_test,
-    b.experiment_id
-  from 
-    experiment_names_with_bucketing_type as a
-  left join 
-    `etsy-data-warehouse-prod.catapult.exp_summary` as b using (ab_test)
-    )
-, bucketing_tests as (
-  select
-    b.*,
-    experiment_id,
-  from
-    experiment_names_with_bucketing_type AS a
-  left join
-    `etsy-data-warehouse-prod.catapult.segment_imbalance_tests` AS b
-      on a.ab_test = b.ab_test
-      and a.experimental_unit = b.experimental_unit
-  left join experiment_ids AS c
-    on a.ab_test = c.ab_test
-qualify row_number() over (partition by experiment_id, segmentation order by _date desc) = 1
+, alerts as (
+select 
+  feature_flag,
+  max(case when alert_type in ('perf-web') then 1 else 0 end) as perf_web_alert,
+  max(case when alert_type in ('streaming') then 1 else 0 end) as streaming_alert,
+  max(case when alert_type in ('early-stopping') then 1 else 0 end) as early_stopping_alert,
+  max(case when alert_type in ('prod') then 1 else 0 end) as prod_alert,
+  max(case when alert_type in ('data-loss') then 1 else 0 end) as data_loss_alert,
+  max(case when alert_type in ('bucketing-skew') then 1 else 0 end) as bucketing_skew_alert,
+  max(case when alert_type in ('perf-native') then 1 else 0 end) as perf_native_alert,
+  max(case when alert_type in ('segment-imbalance') then 1 else 0 end) as segment_imbalance_alert,
+from
+  `etsy-data-warehouse-prod.kafe.CatapultAlertService_AlertEvent` 
+where 
+  _date = (select max(_date) from `etsy-data-warehouse-prod.kafe.CatapultAlertService_AlertEvent`) 
+group by all 
 )
 select
   es.*,
@@ -476,21 +462,15 @@ select
   , osa_coverage
   , prolist_coverage
   -- bucketing info 
-  , count(distinct case when bt.is_significant_with_BH = true then segmentation end) as bucketing_alerts
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('preferred_language') then 1 else 0 end) as preferred_language_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('top_channel') then 1 else 0 end) as top_channel_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('buyer_segment') then 1 else 0 end) as buyer_segment_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('platform') then 1 else 0 end) as platform_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('past_year_purchase_days') then 1 else 0 end) as past_year_purchase_days_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('channel') then 1 else 0 end) as channel_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('language') then 1 else 0 end) as language_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('region') then 1 else 0 end) as region_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('visit_frequency') then 1 else 0 end) as visit_frequency_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('new_visitor') then 1 else 0 end) as new_visitor_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('browser') then 1 else 0 end) as browser_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('bucketing_page') then 1 else 0 end) as bucketing_page_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('canonical_region') then 1 else 0 end) as canonical_region_bucketing_alert
-  , max(case when bt.is_significant_with_BH = true and segmentation in ('buyer_type') then 1 else 0 end) as buyer_type_bucketing_alert
+  , sum(case when bt.feature_flag is not null then 1 else 0 end) as alerts
+  , perf_web_alert
+  , streaming_alert
+  , early_stopping_alert
+  , prod_alert
+  , data_loss_alert
+  , bucketing_skew_alert
+  , perf_native_alert
+  , segment_imbalance_alert
   -- surface checks 
   , max(unavailable_listing) as unavailable_listing_page
   , max(category) as category_page
@@ -508,7 +488,7 @@ from exp_summary es
 left join plats_agg pa using (launch_id)
 left join experiment_pages_ran_on pr using (launch_id)
 left join exp_coverage_agg using (launch_id)
-left join bucketing_tests bt
-  on bt.ab_test=es.config_flag
+left join alerts bt
+  on bt.feature_flag=es.config_flag
 group by all
  );
